@@ -1,0 +1,66 @@
+from datetime import timedelta
+
+# BASE SERVER CONFIGURATION
+# General
+# use 0.0.0.0:5000 for a docker deployment
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 5000
+DEBUG = False
+# CORS Configuration
+ENABLE_CORS = False  # Enable CORS compliancy only if the front app is served by another server (mostly in dev. conf)
+# Session configuration
+SECRET_KEY = "3fc5c5170ebf71780ba3847bdcec28dd0e1b989ab415ea9d2fa9cc451b6cf4eb"
+SESSION_COOKIE_NAME = "JSESSID"  # default JSESSIOND
+SESSION_COOKIE_HTTPONLY = True  # default True
+SESSION_COOKIE_SECURE = False  # default False
+SESSION_PERMANENT = True  # default True
+PERMANENT_SESSION_LIFETIME = timedelta(hours=2)  # default None (the cookie has a browser session lifetime)
+
+# REDIS CONNECTION CONFIGURATION (used for websocket and asynchronous processing
+REDIS_URL = 'redis://redis:6379'  # default redis://
+
+# MONGODB CONNECTION CONFIGURATION
+MONGO_HOST = 'mongo'  # default 'localhost
+MONGO_PORT = 27017  # default
+MONGO_DATABASE = 'gtp-exam-db'  # default
+MONGO_USERNAME = 'gptexamusr'  # default None
+MONGO_PASSWORD = 'TG72UdNkbTKQgLRd'  # default None
+MONGO_AUTH_SOURCE = 'admin'  # default None
+
+# STUDENT CONNECTION TICKET CONFIGURATION
+# Student ticket encryption parameters
+TICKET_STUDENT_KEY = "3fc5c5170ebf71780ba3847bdcec28dd0e1b989ab415ea9d2fa9cc451b6cf4eb"  # default my_secret_key
+TICKET_STUDENT_SALT = "chat-ai-exam-srv"  # default chat-ai-exam-srv
+# Parametric URL to provide to student to initiate connection. Modify according your deployment setting.
+APP_COMPOSITION_AUTH_GENERATION_URL = 'http://localhost:8888/isourceit/composition/auth/generation/:exam_id'
+# Parametric URL to validate a student authentication ticket, that will be sent by mail to students.
+# Modify according your deployment setting.
+APP_COMPOSITION_AUTH_VALIDATION_URL = 'http://localhost:8888/isourceit/composition/auth/validation?ticket=:ticket'
+
+# STUDENT MAIL CONFIGURATION
+# SMTP Access
+MAIL_SERVER = 'smtp.mysmtp.com'  # default ‘localhost’
+MAIL_PORT = 25  # default 25
+MAIL_USE_TLS = False  # default False
+MAIL_USE_SSL = True  # default False
+MAIL_USERNAME = None # default None
+MAIL_PASSWORD = None  # default None
+# Sender configuration
+MAIL_DEFAULT_SENDER = None  # default None
+MAIL_MAX_EMAILS = None  # default None
+# MAIL_SUPPRESS_SEND = app.testing default app.testing
+MAIL_ASCII_ATTACHMENTS = False  # default False
+# Miscellaneous
+# MAIL_DEBUG = app.debug  # default app.debug
+
+# PDF GENERATION CONFIGURATION
+# Temporary folder to generate archives of pdf
+PDF_TEMP_DIR = './temppdf'  # default /tmp
+
+
+# CHAT AI INTEGRATION
+
+# Dalai Integration
+# if CHATAI_DALAI_URL not set, this integration is disabled
+# Access to the dalai webservice
+CHATAI_DALAI_URL = 'http://192.168.2.16:3000'
