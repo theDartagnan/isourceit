@@ -63,4 +63,4 @@ PDF_TEMP_DIR = './temppdf'  # default /tmp
 # Dalai Integration
 # if CHATAI_DALAI_URL not set, this integration is disabled
 # Access to the dalai webservice
-CHATAI_DALAI_URL = 'http://192.168.2.16:3000'
+#CHATAI_DALAI_URL = 'http://dalai-server:3000'

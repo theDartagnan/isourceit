@@ -37,12 +37,14 @@ services:
       - mongo
       - redis
     volumes:
-      # - ./isourceit-server:/usr/src/app:ro # Uncomment if you want to modify the server source-code online
+      # - ./isourceit-server:/usr/src/app:ro # Uncomment if you want to modify the server source-code online (and comment the next line)
+      - ./isourceit-server/config.py:/usr/src/app/config.py:ro # allow to change configuration without rebuilding the image
       - ./isourceit-app/build:/usr/src/front:ro
     networks:
       isourceit-net:
           aliases:
             - isourceit-server
+      #dailai-net:
     command: [ "-c", "/usr/src/app/config.py", "-s", "/usr/src/front", "-l", "INFO" ] # Modify to your wills
 
   proxy:
@@ -70,3 +72,5 @@ volumes:
 
 networks:
   isourceit-net:
+  #dalai-net:
+    #external: true
