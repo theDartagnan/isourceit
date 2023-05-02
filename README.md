@@ -148,3 +148,18 @@ If you want to install Dalai on the same machine than the application and integr
 8. Update the `docker-compose.yml` file of the isourceit project and uncomment lines 46, 74 and 75, relative to the dalai network
 9. Enable dalail integration in `isourceit-server/config.py`  using the url "http://dalai-server:3000" 
 10. (Re)start the isourceit services according to your achitecture settings (docker compose ... up -d)
+
+# First step after deployment
+
+One the plateform is deployed, you can create local users (teacher or admin) using the following command:
+
+```
+docker compose --profile server exec server python create-user.py [-a] [--config container_config_path] -p password username
+```
+
+With :
+- __-a__ admin flag (user will be a teacher otherwise)
+- __--config container_config_path__ the config file path within the docker container (by default config.py at the root of the application server project)
+- __-p password__ the user's password
+- __username__ the username
+
