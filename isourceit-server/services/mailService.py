@@ -31,6 +31,6 @@ You can now start the exam "{}" through this link: <a href={}>{}</a>.
 <br/><br/>
 Sincerely,
 <br/>
-The Chat AI exam platform robot.
+The I Source It platform robot.
 </p>""".format(student_mail, exam_name, access_url, access_url)
         self.__mail.send(msg)
