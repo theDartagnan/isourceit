@@ -8,8 +8,6 @@ services:
       - ./models/alpaca:/root/dalai/alpaca
       - ./models/llama:/root/dalai/llama
     networks:
-      - dalai-net
-    networks:
       dalai-net:
           aliases:
             - dalai-server
