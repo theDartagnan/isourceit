@@ -39,14 +39,14 @@ APP_COMPOSITION_AUTH_VALIDATION_URL = 'http://localhost:8888/isourceit/compositi
 
 # STUDENT MAIL CONFIGURATION
 # SMTP Access
-MAIL_SERVER = 'smtp.mysmtp.com'  # default ‘localhost’
+MAIL_SERVER = 'smtp.my-mail-server.com'  # default ‘localhost’
 MAIL_PORT = 25  # default 25
 MAIL_USE_TLS = False  # default False
 MAIL_USE_SSL = True  # default False
-MAIL_USERNAME = None # default None
+MAIL_USERNAME = None  # default None
 MAIL_PASSWORD = None  # default None
 # Sender configuration
-MAIL_DEFAULT_SENDER = None  # default None
+MAIL_DEFAULT_SENDER = 'no-reply@my-mail-server.com'  # MANDATORY
 MAIL_MAX_EMAILS = None  # default None
 # MAIL_SUPPRESS_SEND = app.testing default app.testing
 MAIL_ASCII_ATTACHMENTS = False  # default False

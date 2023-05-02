@@ -91,8 +91,9 @@ In these settings, you may also want to change the root path of the application 
 
 To change the root path of the application :
 
-- edit the file `isourceit-app/webpack.prod.js` and update variables PUBLIC_PATH (l.13), RESOURCES_PATH (l.14), API_BASE_URL (l.15) and WEBSOCKET_PATH_URL (l.17) with the root path of your choice
 - change the configuration of your reverse proxy accordingly (an example for Apache httpd can be found in `examples/reverseProxy/proxy-httpd.conf`)
+- edit the file `isourceit-app/webpack.prod.js` and update variables PUBLIC_PATH (l.13), RESOURCES_PATH (l.14), API_BASE_URL (l.15) and WEBSOCKET_PATH_URL (l.17) with the root path of your choice
+- Edit the file `docker-compose.yml`, uncomment the lines 43 and 44, and adapt the exposed local port accordingly to your reverse proxy settings. 
 - Edit the file `isourceit-server/config.py` to adapt the configuration. Especially :
   - APP_COMPOSITION_AUTH_GENERATION_URL and APP_COMPOSITION_AUTH_VALIDATION_URL to change the hostname, port and root path of your machine.
   - The Mail configuration to set your smtp server to allow the system sending mails to students
@@ -145,7 +146,7 @@ If you want to install Dalai on the same machine than the application and integr
 5. start the dalai server: `docker compose up -d`
 6. go to the isourceit folder project
 7. Stop the isourceit services if required (docker compose ... down)
-8. Update the `docker-compose.yml` file of the isourceit project and uncomment lines 46, 74 and 75, relative to the dalai network
+8. Update the `docker-compose.yml` file of the isourceit project and uncomment lines 47, 75 and 76, relative to the dalai network
 9. Enable dalail integration in `isourceit-server/config.py`  using the url "http://dalai-server:3000" 
 10. (Re)start the isourceit services according to your achitecture settings (docker compose ... up -d)
 

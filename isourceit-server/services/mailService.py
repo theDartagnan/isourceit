@@ -16,7 +16,6 @@ class MailService(metaclass=Singleton):
 
     def send_mail_for_student_composition(self, student_mail: str, exam_name: str, access_url: str) -> None:
         msg = Message(subject="Exam access",
-                      sender="r.venant@laposte.net",
                       recipients=[student_mail])
         msg.body = """
 Dear {},
