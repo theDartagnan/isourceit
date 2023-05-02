@@ -52,7 +52,7 @@ services:
       - proxy
     image: httpd:2.4
     volumes:
-      - ./reverseProxyExample/proxy-httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+      - ./examples/reverseProxy/proxy-httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
     ports:
       - 127.0.0.1:8888:80
     networks:
