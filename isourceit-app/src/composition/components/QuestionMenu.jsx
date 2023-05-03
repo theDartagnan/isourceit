@@ -13,13 +13,6 @@ function getButtonVariant(question) {
   return 'outline-danger';
 }
 
-function questionLabelExtract(label, maxSize = 13) {
-  if (label.length <= maxSize) {
-    return label;
-  }
-  return `${label.substring(0, maxSize - 3)}...`;
-}
-
 function QuestionMenu({ exam }) {
   return (
     <Row className="border-end border-dark border-3 h-100">
@@ -34,7 +27,7 @@ function QuestionMenu({ exam }) {
                 className={classNames('mb-0', { 'text-decoration-underline': question === exam.currentQuestion && !exam.onSubmit })}
                 onClick={() => exam.changeQuestion(question.id)}
               >
-                {`Q${idx + 1}: ${questionLabelExtract(question.label)}`}
+                {`Question ${idx + 1}`}
               </Button>
             ))
           }

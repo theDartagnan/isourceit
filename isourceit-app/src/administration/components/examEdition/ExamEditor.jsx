@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSave, faTrash } from '@fortawesome/free-solid-svg-icons';
 import ExamMgmtStore from '../ExamMgmtStore';
 import { AdvancedLoading } from '../../../common/components/Loading';
+import RichTextEditor from './RichTextEditor';
 
 function initState() {
   return {
@@ -21,6 +22,7 @@ function initState() {
     rawAuthors: '',
     rawStudents: '',
     selectedChats: [],
+    validatedForm: false,
   };
 }
 
@@ -109,6 +111,8 @@ function reduce(state, action) {
       };
     case 'set-saving':
       return { ...state, saving: action.value };
+    case 'set-validated-form':
+      return { ...state, validatedForm: action.value };
     default:
       throw new Error(`Illegal action type ${action.type}.`);
   }
@@ -161,12 +165,30 @@ function ExamEditor({ newExam }) {
 
   const submit = (e) => {
     e.preventDefault();
+
+    // Check form validaty
+    const form = e.currentTarget;
+    const formValidity = form.checkValidity();
+    // Check state validaty
+    const stateValidity = !!(state.name && state.description
+      && state.questions.length > 0
+      && state.questions.every((q) => !!q)
+      && state.durationMinutes > 0);
+    // Set validated
+    dispatch({ type: 'set-validated-form', value: true });
+    // If validation failed, stop here
+    if (formValidity === false || stateValidity === false) {
+      e.stopPropagation();
+      return;
+    }
+
     const jsonRep = computeExamJsonFromState(state, examId);
     dispatch({ type: 'set-saving', value: true });
     manager.saveExam(jsonRep).then(() => {
       navigate(-1);
     }).catch((er) => {
       dispatch({ type: 'set-saving', value: false });
+      // dispatch({ type: 'set-validated-form', value: false });
       console.warn(er);
     });
   };
@@ -178,10 +200,10 @@ function ExamEditor({ newExam }) {
           loading={manager.loading}
           loadingError={manager.loadingError}
         >
-          <Form onSubmit={submit}>
+          <Form onSubmit={submit} noValidate validated={state.validatedForm}>
             <fieldset disabled={state.saving}>
               <Row>
-                <Col xs={12} sm={6} lg={3}>
+                <Col xs={12} md={6}>
                   <h3 className="text-primary">General</h3>
                   <Form.Group className="mb-3" controlId="exam-edit-name">
                     <Form.Label>Name</Form.Label>
@@ -207,56 +229,61 @@ function ExamEditor({ newExam }) {
                   </Form.Group>
                   <Form.Group className="mb-3" controlId="exam-edit-description">
                     <Form.Label>Description</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      placeholder="Description"
-                      rows={5}
+                    <RichTextEditor
                       value={state.description}
-                      onChange={(e) => dispatch({ type: 'set-raw-field', field: 'description', value: e.target.value })}
+                      onChange={(value) => dispatch({ type: 'set-raw-field', field: 'description', value })}
+                      placeholder="A text that will be given to student before they start the exam"
                       required
+                      validated={state.validatedForm}
                     />
-                    <Form.Text className="text-muted">
-                      A text that will be given to student before they start the exam
-                    </Form.Text>
                   </Form.Group>
                 </Col>
-                <Col xs={12} sm={6} lg={3}>
+                <Col xs={12} md={6}>
                   <h3 className="text-primary">Questions</h3>
                   {
                     state.questions?.map((question, idx) => (
                       // eslint-disable-next-line react/no-array-index-key
                       <Form.Group className="mb-1" controlId={`exam-edit-question-${idx}`} key={idx}>
                         <Form.Label>
-                          {`Question ${idx + 1}`}
+                          <b>{`Question ${idx + 1}`}</b>
                           <Button
                             type="button"
                             variant="danger"
                             size="sm"
                             onClick={() => dispatch({ type: 'delete-question', questionIdx: idx })}
-                            className="ms-2"
+                            className="ms-3"
                           >
                             <FontAwesomeIcon icon={faTrash} aria-hidden="true" title="delete question" />
                           </Button>
                         </Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          placeholder="Your Question"
-                          rows={3}
+                        <RichTextEditor
                           value={state.questions[idx]}
-                          onChange={(e) => dispatch({ type: 'set-question', questionIdx: idx, value: e.target.value })}
+                          onChange={(value) => dispatch({ type: 'set-question', questionIdx: idx, value })}
+                          placeholder="Your Question"
                           required
+                          validated={state.validatedForm}
                         />
                       </Form.Group>
                     ))
                   }
                   <div className="d-grid gap-2">
-                    <Button variant="success" onClick={() => dispatch({ type: 'add-question' })}>
+                    <Button
+                      variant={state.validatedForm && !state.questions.length ? 'danger' : 'success'}
+                      onClick={() => dispatch({ type: 'add-question' })}
+                    >
                       <FontAwesomeIcon icon={faPlus} className="me-1" aria-hidden="true" title="Add question" />
+                      Add question
                     </Button>
                   </div>
                 </Col>
-                <Col xs={12} sm={6} lg={3}>
+              </Row>
+              <Row>
+                <Col xs={12}>
                   <h3 className="text-primary">Members</h3>
+                </Col>
+              </Row>
+              <Row>
+                <Col xs={12} md={6}>
                   <Form.Group className="mb-3" controlId="exam-edit-authors">
                     <Form.Label>Authors</Form.Label>
                     <Form.Control
@@ -272,6 +299,8 @@ function ExamEditor({ newExam }) {
                       (except your API private keys) and access analytics
                     </Form.Text>
                   </Form.Group>
+                </Col>
+                <Col xs={12} md={6}>
                   <Form.Group className="mb-3" controlId="exam-edit-students">
                     <Form.Label>Students</Form.Label>
                     <Form.Control
@@ -286,7 +315,9 @@ function ExamEditor({ newExam }) {
                     </Form.Text>
                   </Form.Group>
                 </Col>
-                <Col xs={12} sm={6} lg={3}>
+              </Row>
+              <Row>
+                <Col xs={12}>
                   <h3 className="text-primary">Chat AI Allowed</h3>
                   {
                     state.selectedChats.map((choice, idx) => (
@@ -325,7 +356,7 @@ function ExamEditor({ newExam }) {
                   }
                 </Col>
               </Row>
-              <Row className="justify-content-center">
+              <Row className="justify-content-center mt-3">
                 <Col xs="auto">
                   <Button type="submit" variant="success" size="lg">
                     <FontAwesomeIcon icon={faSave} className="me-1" aria-hidden="true" title="delete question" />
@@ -340,23 +371,6 @@ function ExamEditor({ newExam }) {
     </Row>
   );
 }
-
-/*
-1 Row
-- 1 colone "General" avec nom (input), duration (input number min 0, step 15), description (textare)
-- 1 colone "Questions" avec list item de textarea de question + icon poubelle + un bouton add
-- 1 colone "Members avec 1 textare authors username/mails et 1 textare student mails
-- 1 colone "Chat AI parameters" avec llistes de chat switch, input si selected et key require
-1 Row colonne : bouton save
-
-name: '',
-    description: '',
-    questions: [],
-    durationMinutes: 0,
-    rawAuthors: '',
-    rawStudents: '',
-    selectedChats: [],
-*/
 
 ExamEditor.propTypes = {
   newExam: PropTypes.bool,

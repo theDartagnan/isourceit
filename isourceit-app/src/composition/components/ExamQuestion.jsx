@@ -1,6 +1,5 @@
 /* eslint no-param-reassign: ["error", { "props": false }] */
 import React, { useState } from 'react';
-// import PropTypes from 'prop-types';
 import { observer, PropTypes as MPropTypes } from 'mobx-react';
 import {
   Alert, Col, Form, Row,
@@ -32,8 +31,10 @@ function ExamQuestion({ question, chatChoices }) {
   return (
     <Row className="justify-content-center">
       <Col xs={12} sm={12} md={12} lg={10} xl={10}>
+
         <Alert variant="primary" className="mb-3">
-          {question.label}
+          {/* eslint-disable-next-line react/no-danger */}
+          <div dangerouslySetInnerHTML={{ __html: question.label }} />
         </Alert>
         <Form>
           <fieldset>

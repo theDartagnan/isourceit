@@ -43,8 +43,8 @@ function ExamInfoView({ exam }) {
       </InputGroup>
       <p className="mt-3">
         <u>Description:</u>
-        {' '}
-        {exam.description}
+        {/* eslint-disable-next-line react/no-danger */}
+        <div className="border border-1 p-1 mt-1" dangerouslySetInnerHTML={{ __html: exam.description }} />
       </p>
       <ul className="list-unstyled">
         <li className="mt-3">

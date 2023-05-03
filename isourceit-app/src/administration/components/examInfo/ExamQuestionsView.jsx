@@ -6,8 +6,12 @@ function ExamQuestionsView({ exam }) {
   return (
     <ListGroup>
       {
-        exam.questions?.map((question) => (
-          <ListGroup.Item key={question}>{question}</ListGroup.Item>
+        exam.questions?.map((question, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <ListGroup.Item key={idx}>
+            {/* eslint-disable-next-line react/no-danger */}
+            <div dangerouslySetInnerHTML={{ __html: question }} />
+          </ListGroup.Item>
         ))
         }
     </ListGroup>

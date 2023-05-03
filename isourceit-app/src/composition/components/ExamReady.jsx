@@ -41,7 +41,9 @@ function ExamReady({ exam }) {
       <Col xs={12} sm={10} md={8} lg={6}>
         <Alert variant="primary">
           <Alert.Heading>{exam.name}</Alert.Heading>
-          <p>{exam.description}</p>
+          <hr />
+          {/* eslint-disable-next-line react/no-danger */}
+          <div dangerouslySetInnerHTML={{ __html: exam.description }} />
           <hr />
           <p className="mb-0">
             This exam includes

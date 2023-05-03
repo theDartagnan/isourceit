@@ -76,6 +76,7 @@ module.exports = {
   // //ajoute les extensions .jsx et .scss aux extensions gérées
   resolve: {
     extensions: ['.js', '.json', '.jsx', '.scss', '.wasm'],
+    modules: ['node_modules', 'custom_modules'],
   },
   // modules de configuration selon le type de fichier rencontré
   module: {
