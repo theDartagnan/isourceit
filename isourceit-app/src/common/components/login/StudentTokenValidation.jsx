@@ -1,6 +1,6 @@
 import React from 'react';
 import { Col, Row } from 'react-bootstrap';
-import LoadingLoader from '../Loading';
+import { LoadingLoader } from '../Loading';
 
 function StudentTokenValidation() {
   return (

@@ -57,7 +57,7 @@ function StudentTokenGeneration() {
   return (
     <Row className="justify-content-center">
       <Col xs={12} sm={10} md={6} lg={4}>
-        <Alert variant="success" className="mb-3">
+        <Alert variant="primary" className="mb-3">
           <Alert.Heading>Examinee token generation</Alert.Heading>
           <p>
             This login page is reserved to students that attempt to log for a particular exam.
@@ -93,21 +93,29 @@ function StudentTokenGeneration() {
         </Form>
         {
           state.tokenGenerated && (
-            <Alert variant="success" className="mt-3">
-              <Alert.Heading>Token successfully generated</Alert.Heading>
-              <p className="text-wrap">
-                A connection link has been sent to your email address. You can now close this page.
-              </p>
+            <>
+              <Alert variant="success" className="mt-3">
+                <Alert.Heading>Token successfully generated</Alert.Heading>
+                <p className="text-wrap">
+                  {state.tokenGenerated.mail ? 'A connection link has been sent to your email address. ' : ''}
+                  {state.tokenGenerated.teacher ? 'Your teacher will provide you the connection link afterwards. ' : ''}
+                  You can now close this page.
+                </p>
+              </Alert>
               {
-                state.tokenGenerated.url && (
+              state.tokenGenerated.url && (
+                <Alert variant="warning" className="mt-3">
+                  <Alert.Heading>
+                    Token (WARNING: in a secured environment,&nbsp;
+                    this show not be showed)
+                  </Alert.Heading>
                   <p className="text-wrap text-break">
-                    Token:
-                    {' '}
-                    {state.tokenGenerated.url}
+                    <a href={state.tokenGenerated.url}>{state.tokenGenerated.url}</a>
                   </p>
-                )
-              }
-            </Alert>
+                </Alert>
+              )
+            }
+            </>
           )
         }
         {

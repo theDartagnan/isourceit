@@ -6,15 +6,24 @@ from utils.Singleton import Singleton
 class MailService(metaclass=Singleton):
     def __init__(self, app: Flask = None):
         self.__mail = Mail(app)
+        if app is None:
+            self.__inited = False
+        else:
+            self.__inited = True
 
     def init_app(self, app: Flask):
+        if self.__inited:
+            raise Exception("Mail Service already initied")
         self.__mail.init_app(app)
+        self.__inited = True
 
     @property
-    def mail(self):
-        return self.__mail
+    def is_inited(self):
+        return self.__inited
 
     def send_mail_for_student_composition(self, student_mail: str, exam_name: str, access_url: str) -> None:
+        if not self.__inited:
+            raise Exception("Mail service not inited")
         msg = Message(subject="Exam access",
                       recipients=[student_mail])
         msg.body = """

@@ -85,11 +85,18 @@ def initiate_student_composition_access(exam_id: str, username: str) -> str:
     ticket = create_exam_composition_url_ticket(exam_id, username, token)
     # Create the access complete url
     access_url = generate_exam_auth_validation_url(ticket)
-    # Send a mail with to ticket to the user
-    mail_svc = MailService()
-    mail_svc.send_mail_for_student_composition(student_access['username'], student_access['exam_name'], access_url)
+    # According to the configuration, send mail or return url, or indicate teacher will provide the ticket manually
+    response = dict(mail=False, teacher=False, url=None)
+    if current_app.config.get('TICKET_COM_SEND_MAIL', False) is True:
+        mail_svc = MailService()
+        mail_svc.send_mail_for_student_composition(student_access['username'], student_access['exam_name'], access_url)
+        response['mail'] = True
+    if current_app.config.get('TICKET_COM_TEACHER', True) is True:
+        response['teacher'] = True
+    if current_app.config.get('TICKET_COM_ANSWER_ON_GENERATE', False) is True:
+        response['url'] = access_url
 
-    return access_url
+    return response
 
 
 def authenticate_student_from_ticket(ticket: str) -> None:

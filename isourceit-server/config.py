@@ -27,7 +27,17 @@ MONGO_USERNAME = 'gptexamusr'  # default None
 MONGO_PASSWORD = 'TG72UdNkbTKQgLRd'  # default None
 MONGO_AUTH_SOURCE = 'admin'  # default None
 
-# STUDENT CONNECTION TICKET CONFIGURATION
+# STUDENT EXAM CONNECTION URL CONFIGURATION
+# Ticket transmission configuration: how the ticket will be priveded to the student
+
+# Will sent the ticket by mail to the student. Default False
+TICKET_COM_SEND_MAIL = False
+# Will show th ticket to the teacher. Up to the teacher to communicate this ticket afterwards. Default True
+TICKET_COM_TEACHER = True
+# Will show the ticket directly to the client who generate it. UNSECURED, to use only for debugging purpose.
+# Default False
+TICKET_COM_ANSWER_ON_GENERATE = False
+
 # Student ticket encryption parameters
 TICKET_STUDENT_KEY = "3fc5c5170ebf71780ba3847bdcec28dd0e1b989ab415ea9d2fa9cc451b6cf4eb"  # default my_secret_key
 TICKET_STUDENT_SALT = "chat-ai-exam-srv"  # default chat-ai-exam-srv
@@ -39,6 +49,8 @@ APP_COMPOSITION_AUTH_VALIDATION_URL = 'http://localhost:8888/isourceit/compositi
 
 # STUDENT MAIL CONFIGURATION
 # SMTP Access
+# If mail server is None, no mail will be sent, and the connection url will be prompt
+# directly to user (unsecured!)
 MAIL_SERVER = 'smtp.my-mail-server.com'  # default ‘localhost’
 MAIL_PORT = 25  # default 25
 MAIL_USE_TLS = False  # default False

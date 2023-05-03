@@ -21,9 +21,7 @@ def grant_student_exam_access():
     data = request.get_json(force=False)
     exam_id = data.get('exam_id', None)
     username = data.get('username', None)
-    securityService.initiate_student_composition_access(exam_id, username)
-    # We return an object with empty url property for front app compatibility
-    return {'url': ''}
+    return securityService.initiate_student_composition_access(exam_id, username)
 
 
 @security_controller.route("/api/rest/composition/ticket-login", methods=['POST'])

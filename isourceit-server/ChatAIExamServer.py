@@ -80,8 +80,20 @@ def create_server_apps(config_file_path: str, static_folder_path: str,
     app.logger.info("Setup Mongo-managed HTTP sessions")
     app.session_interface = AutoCleanMongoSession(mongo_dao.session_col, threshold_cleaner=timedelta(hours=2))
 
-    # mail setup
-    mail_svc = MailService(app)
+    # validate token communication configuration and issue error is misconfig
+    if app.config.get('TICKET_COM_SEND_MAIL', False) is False\
+            and app.config.get('TICKET_COM_TEACHER', True) is False\
+            and app.config.get('TICKET_COM_ANSWER_ON_GENERATE', False) is False:
+        for _ in range(5):
+            LOG.error("Configuration error detected: no student exam access ticket communication configured!")
+
+    if app.config.get('TICKET_COM_SEND_MAIL', True) is True and app.config.get('MAIL_SERVER', None) is None:
+        for _ in range(5):
+            LOG.error("Configuration error detected: ticket communication by mail set but no mail server is given!")
+
+    # mail setup if required
+    if app.config.get('TICKET_COM_SEND_MAIL', False) is True:
+        mail_svc = MailService(app)
 
     # Setup Chat AI Service
     app.logger.info("Setup chat AI manager")
