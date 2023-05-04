@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional
 from flask import session
@@ -7,6 +8,8 @@ __all__ = ['STUDENT_ROLE', 'TEACHER_ROLE', 'ADMIN_ROLE',
            'session_is_student', 'session_is_teacher_or_admin', 'session_username',
            'update_session_student_info', 'session_exam_id', 'is_exam_started', 'is_exam_ended',
            'init_composition_session', 'init_admin_session', 'get_ws_sid', 'update_session_ws_sid']
+
+LOG = logging.getLogger(__name__)
 
 STUDENT_ROLE = 'student'
 TEACHER_ROLE = 'teacher'

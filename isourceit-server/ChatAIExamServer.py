@@ -121,7 +121,7 @@ def create_server_apps(config_file_path: str, static_folder_path: str,
             if not has_logged_session() or not session_is_student():
                 raise ConnectionRefusedError("Authentication with proper role required")
         except ConnectionRefusedError as e:
-            print(e)
+            LOG.warning("Websocket connection refused {}".format(str(e)))
             return False
         else:
             update_session_ws_sid(request.sid)
