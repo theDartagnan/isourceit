@@ -9,9 +9,11 @@ from mongoDAO.chatAIDescriptionRepository import clear_chatai_descriptions, find
 from mongoDAO.studentActionRepository import update_chat_ai_answer, set_chat_ai_achieved
 from mongoModel.ChatAIDescription import ChatAIDescription
 from mongoModel.Exam import Exam
+from mongoModel.StudentAction import AskChatAI
 from services.chatAI.ChatAIHandler import ChatAIHandler
 from services.chatAI.CopyPasteHandler import CopyPasteHandler
 from services.chatAI.DalaiHandler import DalaiHandler
+from services.chatAI.OpenAIHandler import OpenAIHAndler
 from utils.Singleton import Singleton
 
 __all__ = ['ChatAIManager']
@@ -82,6 +84,9 @@ class ChatAIManager(metaclass=Singleton):
             # According to config, instanciate different handler
             if 'CHATAI_DALAI_URL' in self._config:
                 h = DalaiHandler(self._answer_queue, self._config)
+                self._ai_handlers_by_chat_key[h.chat_key] = h
+            if self._config.get('CHATAI_OPENAI_ENABLED', False) is True:
+                h = OpenAIHAndler(self._answer_queue, self._config)
                 self._ai_handlers_by_chat_key[h.chat_key] = h
         # Add copyPast
         h = CopyPasteHandler(self._answer_queue)
@@ -160,13 +165,14 @@ class ChatAIManager(metaclass=Singleton):
             choices.append(choice)
         return choices
 
-    def process_prompt(self, question_idx: int, chat_id: str, chat_key: str, model_key: str, action_id: str, user_sid: str, prompt: str,
+    def process_prompt(self, action_id: str, action: AskChatAI, user_sid: str,
                        private_key: str = None, **kwargs) -> None:
-        if not prompt:
+        if action.get('prompt') is None:
             raise Exception("No prompt to process")
-        handler = self._ai_handlers_by_chat_key.get(chat_key)
+        handler = self._ai_handlers_by_chat_key.get(action['chat_key'])
         if not handler:
-            raise Exception("Unmanaged chat: {}".format(chat_key))
-        request_identifiers = dict(request_type='prompt', question_idx=question_idx,
-                                   action_id=action_id, user_sid=user_sid, chat_id=chat_id)
-        handler.send_prompt(model_key, prompt, request_identifiers, private_key=private_key, **kwargs)
+            raise Exception("Unmanaged chat: {}".format(action['chat_key']))
+        request_identifiers = dict(request_type='prompt', question_idx=action['question_idx'],
+                                   action_id=action_id, user_sid=user_sid, chat_id=action['chat_id'])
+        handler.send_prompt(action['model_key'], action['prompt'], request_identifiers, private_key=private_key,
+                            action=action, **kwargs)

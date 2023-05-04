@@ -7,7 +7,8 @@ from mongoModel.StudentAction import StudentAction, ASK_CHAT_AI_TYPE, EXTERNAL_R
     STUDENT_ACTION_TYPE_MAPPING, START_EXAM_TYPE, SUBMIT_EXAM_TYPE
 
 __all__ = ['create_student_action', 'add_chat_ai_answer', 'mark_external_resource_removed',
-           'get_actions_for_student_for_exam', 'update_chat_ai_answer', 'set_chat_ai_achieved']
+           'get_actions_for_student_for_exam', 'update_chat_ai_answer', 'set_chat_ai_achieved',
+           'find_last_chat_ai_model_interactions']
 
 
 def create_student_action(dao: MongoDAO, student_action: StudentAction) -> str:
@@ -157,4 +158,26 @@ def find_action_summary_by_student_for_exam(dao: MongoDAO, exam_id: str) -> List
             'first_timestamp': 1
         }}
     ])
+    return list(result)
+
+
+def find_last_chat_ai_model_interactions(dao: MongoDAO, username: str, exam_id: str, question_idx: int,
+                                         chat_id: str) -> List[Any]:
+    result = dao.student_action_col.find(
+        filter={
+            'exam_id': exam_id,
+            'student_username': username,
+            'question_idx': question_idx,
+            'action_type': ASK_CHAT_AI_TYPE,
+            'chat_id': chat_id
+
+        },
+        sort=[('timestamp', pymongo.ASCENDING)],
+        projection={
+            '_id': 0,
+            'prompt': 1,
+            'answer': 1,
+            'achieved': 1,
+        }
+    )
     return list(result)

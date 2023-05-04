@@ -75,4 +75,10 @@ PDF_TEMP_DIR = './temppdf'  # default /tmp
 # Dalai Integration
 # if CHATAI_DALAI_URL not set, this integration is disabled
 # Access to the dalai webservice
-#CHATAI_DALAI_URL = 'http://dalai-server:3000'
+# CHATAI_DALAI_URL = 'http://dalai-server:3000'
+
+# OpenAI Integration
+# if CHATAI_OPENAI_ENABLED is set to True, OpenAI will be available
+# CHATAI_OPENAI_ENABLED = True
+# CHATAI_OPENAI_POOL_SIZE define the number of threads to handle OpenAI chat requests (default 4)
+# CHATAI_OPENAI_POOL_SIZE = 4

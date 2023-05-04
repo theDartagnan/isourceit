@@ -123,10 +123,7 @@ def handle_action(action_data: Dict) -> Mapping:
             'prompt': action['prompt'],
         }
         if ws_sid is not None:
-            chat_ai_mgr.process_prompt(action['question_idx'], action['chat_id'], action['chat_key'],
-                                       action['model_key'],
-                                       action_id, ws_sid,
-                                       action['prompt'], private_key=private_key, answer=action.get('answer'))
+            chat_ai_mgr.process_prompt(action_id, action, ws_sid, private_key=private_key)
         else:
             LOG.warning('No ws id, will not be able to return reponse!')
             result['achieved'] = True
