@@ -184,28 +184,11 @@ def get_exam_student_actions(exam_id: str, student_username: str) -> Iterable[St
     if not any(
             filter(lambda uname: uname == current_username, map(lambda author: author['username'], exam['authors']))):
         raise Unauthorized("Only authors might modify their exam")
-
-    # todo: replace by negative projection
+    # Remove _id, id and 
     projection = {
         '_id': 0,
-        'timestamp': 1,
-        'question_idx': 1,
-        'action_type': 1,
-        'next_question_idx': 1,
-        'return_timestamp': 1,
-        'duration_seconds': 1,
-        'page_hidden': 1,
-        'text': 1,
-        'prompt': 1,
-        'answer': 1,
-        'achieved': 1,
-        'chat_id': 1,
-        'chat_key': 1,
-        'model_key': 1,
-        'title': 1,
-        'description': 1,
-        'rsc_type': 1,
-        'removed': 1
+        'id': 0,
+        'exam_id': 0
     }
     return studentActionRepository.get_actions_for_student_for_exam(mongo_dao, username=student_username,
                                                                     exam_id=exam_id, projection=projection)
