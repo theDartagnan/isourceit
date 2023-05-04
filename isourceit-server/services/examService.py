@@ -9,9 +9,12 @@ from mongoModel.Exam import Exam
 from mongoModel.StudentAction import START_EXAM_TYPE, WROTE_INITIAL_ANSWER_TYPE, ASK_CHAT_AI_TYPE, \
     EXTERNAL_RESOURCE_TYPE, WROTE_FINAL_ANSWER_TYPE, SUBMIT_EXAM_TYPE, CHANGED_QUESTION_TYPE
 from services.ChatAIManager import ChatAIManager
+from services.securityService import decrypt_exam_chat_api_keys, encrypt_exam_chat_api_keys
 from services.studentAuthUrlService import generate_exam_auth_generation_url
 from sessions.sessionManagement import session_username, session_exam_id
 
+__all__ = ['find_admin_exams_summary', 'find_admin_exam_by_id', 'create_exam', 'update_exam',
+           'find_composition_exam_by_id']
 
 LOG = logging.getLogger(__name__)
 
@@ -39,12 +42,15 @@ def find_admin_exam_by_id(exam_id: str, with_action_summary: bool = False) -> Ex
             student['asked_access'] = True
         else:
             student['asked_access'] = False
-    # Remove all api key from another owner
+    # Remove all api key from another owner or decrypt them
     username = session_username()
     if username != exam['owner_username']:
         for chat_key, chat in exam.get('selected_chats', dict()).items():
             if 'api_key' in chat:
                 chat.pop('api_key')
+    else:
+        # decrypt potential exam chat api keys
+        exam = decrypt_exam_chat_api_keys(exam)
 
     # if action summary asked, get them and add them
     if with_action_summary:
@@ -87,6 +93,9 @@ def create_exam(exam_data: Dict) -> Exam:
     user_in_authors = any(filter(lambda a: a.get('username') == username, exam_to_create.get('authors')))
     if not user_in_authors:
         exam_to_create['authors'].append({'username': username})
+
+    # encrypt potential exam chat api keys
+    exam_to_create = encrypt_exam_chat_api_keys(exam_to_create)
 
     # create the exam
     mongo_dao = MongoDAO()
@@ -132,6 +141,9 @@ def update_exam(exam_id: str, exam_data: Mapping) -> Exam:
     exam['questions'] = exam_to_update['questions']
     exam['duration_minutes'] = exam_to_update['duration_minutes']
     exam['selected_chats'] = exam_to_update['selected_chats']
+
+    # encrypt potential exam chat api keys
+    exam = encrypt_exam_chat_api_keys(exam)
 
     # update in local author : check that current username is an author
     exam['authors'] = exam_to_update['authors']

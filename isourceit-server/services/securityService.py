@@ -4,11 +4,13 @@ from datetime import timedelta
 from typing import Optional, Dict
 from uuid import uuid4
 
+from cryptography.fernet import Fernet
 from flask import current_app
 from itsdangerous import URLSafeSerializer, BadData
 from werkzeug.exceptions import Unauthorized, BadRequest
 from mongoDAO import userRepository, examRepository, studentActionRepository
 from mongoDAO.MongoDAO import MongoDAO
+from mongoModel.Exam import Exam
 from mongoModel.StudentAction import START_EXAM_TYPE, SUBMIT_EXAM_TYPE
 from services.studentAuthUrlService import generate_exam_auth_validation_url
 from services.mailService import MailService
@@ -16,6 +18,47 @@ from sessions.sessionManagement import clear_session, STUDENT_ROLE, build_user_c
     init_composition_session, init_admin_session
 
 LOG = logging.getLogger(__name__)
+
+DFLT_FERNET_KEY = b'WRfY1CgEmfvGEY4DRhxgSbpt2obQCe4cd7rx1qvGeto='
+
+
+def encrypt_exam_chat_api_keys(exam: Exam) -> Exam:
+    key = current_app.config.get('API_PV_KEY_ENC_KEY')
+    if key is None:
+        LOG.warning("No key provided to encrypt chat api keys. Use default. Unsecured.")
+        key = DFLT_FERNET_KEY
+    if 'selected_chats' not in exam:
+        return exam
+    f_cypher = Fernet(key.encode('UTF-8'))
+    for chat_value in exam['selected_chats'].values():
+        if 'api_key' in chat_value:
+            chat_value['api_key'] = f_cypher.encrypt(chat_value['api_key'].encode('UTF-8')).decode('UTF-8')
+    return exam
+
+
+def decrypt_exam_chat_api_keys(exam: Exam) -> Exam:
+    key = current_app.config.get('API_PV_KEY_ENC_KEY')
+    if key is None:
+        LOG.warning("No key provided to encrypt chat api keys. Use default. Unsecured.")
+        key = DFLT_FERNET_KEY
+    if 'selected_chats' not in exam:
+        return exam
+    f_cypher = Fernet(key.encode('UTF-8'))
+    for chat_value in exam['selected_chats'].values():
+        if 'api_key' in chat_value:
+            chat_value['api_key'] = f_cypher.decrypt(chat_value['api_key'].encode('UTF-8')).decode('UTF-8')
+    return exam
+
+
+def decrypt_exam_chat_api_key(enc: str) -> str:
+    if not enc:
+        return enc
+    key = current_app.config.get('API_PV_KEY_ENC_KEY')
+    if key is None:
+        LOG.warning("No key provided to encrypt chat api keys. Use default. Unsecured.")
+        key = DFLT_FERNET_KEY
+    f_cypher = Fernet(key.encode('UTF-8'))
+    return f_cypher.decrypt(enc.encode('UTF-8')).decode('UTF-8')
 
 
 def get_ticket_security_key():

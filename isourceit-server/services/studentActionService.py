@@ -10,6 +10,7 @@ from mongoModel.StudentAction import STUDENT_ACTION_TYPE_MAPPING, EXTERNAL_RESOU
     WroteInitialAnswer, WroteFinalAnswer, StudentAction, ChangedQuestion, LostFocus
 from services import ChatAIManager
 from services.ChatAIManager import ChatAIManager
+from services.securityService import decrypt_exam_chat_api_key
 from sessions.sessionManagement import session_username, update_session_student_info, \
     is_exam_ended, is_exam_started, session_exam_id, get_ws_sid
 
@@ -111,7 +112,11 @@ def handle_action(action_data: Dict) -> Mapping:
             'page_hidden': action['page_hidden'],
         }
     elif action_class == AskChatAI:
-        private_key = exam['selected_chats'][action['chat_id']].get('api_key', None)
+        exam_chat_settings = exam['selected_chats'].get(action['chat_id'])
+        if exam_chat_settings is None:
+            LOG.warning('no exam chat sttings for chat_id {}'.format(action['chat_id']))
+            raise BadRequest('Bad chat_id')
+        private_key = decrypt_exam_chat_api_key(exam_chat_settings.get('api_key', None))
         chat_ai_mgr = ChatAIManager()
         ws_sid = get_ws_sid()
         result = {

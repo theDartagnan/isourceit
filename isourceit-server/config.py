@@ -47,6 +47,10 @@ APP_COMPOSITION_AUTH_GENERATION_URL = 'http://localhost:8888/isourceit/compositi
 # Modify according your deployment setting.
 APP_COMPOSITION_AUTH_VALIDATION_URL = 'http://localhost:8888/isourceit/composition/auth/validation?ticket=:ticket'
 
+# Private KEY encryption parameters
+# default b'WRfY1CgEmfvGEY4DRhxgSbpt2obQCe4cd7rx1qvGeto='
+API_PV_KEY_ENC_KEY = 'sBwoRv5rjSBinytDLXZnLjLBUePtk_65bTNrPrVPkeI='
+
 # STUDENT MAIL CONFIGURATION
 # SMTP Access
 # If mail server is None, no mail will be sent, and the connection url will be prompt
