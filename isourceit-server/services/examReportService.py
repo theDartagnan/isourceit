@@ -10,9 +10,15 @@ from services.reportArchive.ExamReportCreationThread import ExamReportCreationTh
 
 
 def start_or_get_reporting(exam_id: str):
-    # find exam
+    # find exam with minimal properties
     mongo_dao = MongoDAO()
-    exam = find_exam_by_id(mongo_dao, exam_id)
+    exam = find_exam_by_id(mongo_dao, exam_id, projection={
+        '_id': 1,
+        'name': 1,
+        'duration_minutes': 1,
+        'questions': 1,
+        'students': 1
+    })
     if exam is None:
         raise NotFound('Exam not found')
     # find or create a report

@@ -184,7 +184,7 @@ def get_exam_student_actions(exam_id: str, student_username: str) -> Iterable[St
     if not any(
             filter(lambda uname: uname == current_username, map(lambda author: author['username'], exam['authors']))):
         raise Unauthorized("Only authors might modify their exam")
-    # Remove _id, id and 
+    # Remove _id, id and exam_id
     projection = {
         '_id': 0,
         'id': 0,
