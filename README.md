@@ -1,6 +1,6 @@
 # Transparency Exam System
 
-ISourceIt is a plateform to take advantage of LLM Chat bot (such as Chat GPT) within an exam process. It allows students to use different chat bots for the exam, integrated or not to the plateform, beside the redaction of their answer to a given question, then provides detailled analytics to the teachers regarding actions students achivied.
+Transparency Exam System is a plateform to take advantage of LLM Chat bot (such as Chat GPT) within an exam process. It allows students to use different chat bots for the exam, integrated or not to the plateform, beside the redaction of their answer to a given question, then provides detailled analytics to the teachers regarding actions students achivied.
 
 The plateform is built over 4 components:
 - A Mongo database for exam information, analytics and HTTP sessions.
