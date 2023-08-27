@@ -23,10 +23,10 @@ function ExamView({ examType }) {
   useEffect(() => {
     switch (examType) {
       case 'exam':
-        manager.loadDetailedExam({ examId });
+        manager.loadDetailedExam({ examId, force: true });
         break;
       case 'socrat':
-        manager.loadDetailedSocrat({ examId });
+        manager.loadDetailedSocrat({ examId, force: true });
         break;
       default:
         throw new Error(`Unmanageable exam type: ${examType}`);
