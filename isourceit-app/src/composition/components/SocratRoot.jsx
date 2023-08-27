@@ -4,12 +4,12 @@ import { Alert, Col, Row } from 'react-bootstrap';
 import StuManager from '../model/StuManager';
 import RootStore from '../../RootStore';
 import { LoadingLoader } from '../../common/components/Loading';
-import ExamReady from './ExamReady';
-import ExamEnded from './ExamEnded';
-import ExamSubmit from './ExamSubmit';
-import ExamComposition from './ExamComposition';
+import SocratComposition from './SocratComposition';
+import SocratReady from './SocratReady';
+import SocratEnded from './SocratEnded';
+import SocratSubmit from './SocratSubmit';
 
-function ExamRoot() {
+function SocratRoot() {
   const { currentUser } = useContext(RootStore);
   const [examMgr, setExamMgr] = useState(null);
 
@@ -21,10 +21,10 @@ function ExamRoot() {
     return () => {
       examMgr.socketManager.release();
       if (examMgr.exam) {
-        if (examMgr.exam.focusManager.running) {
+        if (examMgr.exam.focusManager?.running) {
           examMgr.exam.focusManager.releaseListeners();
         }
-        if (examMgr.exam.timeoutManager.running) {
+        if (examMgr.exam.timeoutManager?.running) {
           examMgr.exam.timeoutManager.stopTimer();
         }
       }
@@ -51,13 +51,13 @@ function ExamRoot() {
   } else if (examMgr.loadingError) {
     view = <Alert variant="danger">{examMgr.loadingError.message}</Alert>;
   } else if (!examMgr.exam.started) {
-    view = <ExamReady exam={examMgr.exam} />;
+    view = <SocratReady socrat={examMgr.exam} />;
   } else if (examMgr.exam.ended) {
-    view = <ExamEnded exam={examMgr.exam} />;
+    view = <SocratEnded socrat={examMgr.exam} />;
   } else if (examMgr.exam.onSubmit) {
-    view = <ExamSubmit exam={examMgr.exam} />;
+    view = <SocratSubmit socrat={examMgr.exam} />;
   } else {
-    view = <ExamComposition exam={examMgr.exam} />;
+    view = <SocratComposition exam={examMgr.exam} />;
   }
 
   if (examMgr && !examMgr.socketManager.connected) {
@@ -82,4 +82,4 @@ function ExamRoot() {
   return view;
 }
 
-export default observer(ExamRoot);
+export default observer(SocratRoot);

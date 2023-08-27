@@ -1,4 +1,5 @@
 from flask import request, make_response, Blueprint
+
 from services import securityService
 from sessions.securedEndpoint import secured_endpoint
 
@@ -21,7 +22,8 @@ def grant_student_exam_access():
     data = request.get_json(force=False)
     exam_id = data.get('exam_id', None)
     username = data.get('username', None)
-    return securityService.initiate_student_composition_access(exam_id, username)
+    exam_type = data.get('exam_type', None)
+    return securityService.initiate_student_composition_access(exam_id, username, exam_type)
 
 
 @security_controller.route("/api/rest/composition/ticket-login", methods=['POST'])

@@ -49,7 +49,7 @@ class SocketManager {
     this._socket = io(APP_ENV_WEBSOCKET_BASE_URL, socketOptions);
 
     this._socket.on('connect', () => {
-      console.log('Socket connected'); // eslint-disable-line no-console
+      // console.log('Socket connected'); // eslint-disable-line no-console
       runInAction(() => {
         this._connected = true;
       });
@@ -63,15 +63,15 @@ class SocketManager {
     });
 
     this._socket.on('disconnect', () => {
-      console.log('Socket disconnected'); // eslint-disable-line no-console
+      // console.log('Socket disconnected'); // eslint-disable-line no-console
       runInAction(() => {
         this._connected = false;
       });
     });
 
-    this._socket.on('info', (info) => {
-      console.log('Info received', info.message); // eslint-disable-line no-console
-    });
+    // this._socket.on('info', (info) => {
+    //   console.log('Info received', info.message); // eslint-disable-line no-console
+    // });
 
     this._socket.on('answer', (answer) => {
       if (this._answerCallback) {

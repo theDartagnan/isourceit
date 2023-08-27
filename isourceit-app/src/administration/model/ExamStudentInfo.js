@@ -5,6 +5,8 @@ import { loadStudentActions } from './netLayer';
 class ExamStudentInfo {
   _examId;
 
+  _examType;
+
   _username;
 
   _askedAccess;
@@ -21,11 +23,13 @@ class ExamStudentInfo {
 
   _loadingActions = 0;
 
-  constructor(examId, jsonData) {
+  constructor(examId, examType, jsonData) {
     makeAutoObservable(this, {
       _examId: false,
+      _examType: false,
     });
     this._examId = examId;
+    this._examType = examType;
     if (jsonData) {
       this.fromJson(jsonData);
     }
@@ -86,9 +90,16 @@ class ExamStudentInfo {
     }
     this._loadingActions += 1;
     try {
+      let actionsExamType;
+      if (this._examType === 'socrat') {
+        actionsExamType = 'socrats';
+      } else {
+        actionsExamType = 'exams';
+      }
       let actions = await loadStudentActions({
         examId: this._examId,
         studentUsername: this._username,
+        examType: actionsExamType,
       });
       actions = actions.map((act) => {
         /* eslint-disable no-param-reassign */

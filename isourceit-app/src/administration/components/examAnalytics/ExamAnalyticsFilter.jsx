@@ -12,7 +12,7 @@ function limitQuestionSize(q, maxSize = 45, postfix = '...') {
 }
 
 function ExamAnalyticsFilter({
-  students, questions, selectedStudentUsername, selectedQuestionIdx,
+  examType, students, questions, selectedStudentUsername, selectedQuestionIdx,
   onSelectStudentUsername, onSelectQuestionIdx, disabled, className, style,
 }) {
   const selectStudent = (e) => {
@@ -60,9 +60,15 @@ function ExamAnalyticsFilter({
         >
           <option value="-1">All questions</option>
           {
-            questions.map((question, idx) => (
-              <option key={question} value={idx}>{limitQuestionSize(question)}</option>
-            ))
+            examType === 'exam'
+              ? questions.map((question, idx) => (
+                <option key={question} value={idx}>{limitQuestionSize(question)}</option>
+              ))
+              : questions.map((question, idx) => (
+                <option key={question.question} value={idx}>
+                  {limitQuestionSize(question.question)}
+                </option>
+              ))
           }
         </Form.Select>
       </Col>
@@ -71,6 +77,7 @@ function ExamAnalyticsFilter({
 }
 
 ExamAnalyticsFilter.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
   students: MPropTypes.arrayOrObservableArray.isRequired,
   questions: MPropTypes.arrayOrObservableArray.isRequired,
   selectedStudentUsername: PropTypes.string,

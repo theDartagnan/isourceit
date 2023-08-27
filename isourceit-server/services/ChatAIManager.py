@@ -2,13 +2,16 @@ import logging
 from multiprocessing import JoinableQueue, Process
 from time import sleep
 from typing import List, Any, Dict
+
 from flask_socketio import SocketIO
+
 from mongoDAO.MongoDAO import MongoDAO
 from mongoDAO.chatAIDescriptionRepository import clear_chatai_descriptions, find_all_chatai_descriptions, \
     add_chatai_description
 from mongoDAO.studentActionRepository import update_chat_ai_answer, set_chat_ai_achieved
 from mongoModel.ChatAIDescription import ChatAIDescription
 from mongoModel.Exam import Exam
+from mongoModel.SocratQuestionnaire import SocratQuestionnaire
 from mongoModel.StudentAction import AskChatAI
 from services.chatAI.ChatAIHandler import ChatAIHandler
 from services.chatAI.CopyPasteHandler import CopyPasteHandler
@@ -165,14 +168,29 @@ class ChatAIManager(metaclass=Singleton):
             choices.append(choice)
         return choices
 
+    def compute_student_choice_from_socrat(self, socrat: SocratQuestionnaire) -> Any:
+        available_chat_dict = dict((c['id'], c) for c in self.available_chats)
+        choices = []
+        id = socrat['selected_chat'].get('id')
+        if id:
+            chat_info = available_chat_dict.get(id)
+            if chat_info:
+                choice = dict(id=id, chat_key=chat_info['chat_key'], model_key=chat_info['model_key'],
+                              title=chat_info['title'])
+                if chat_info.get('copyPaste') is True:
+                    choice['copyPaste'] = True
+                choices.append(choice)
+        return choices
+
     def process_prompt(self, action_id: str, action: AskChatAI, user_sid: str,
-                       private_key: str = None, **kwargs) -> None:
-        if action.get('prompt') is None:
+                       private_key: str = None, custom_init_prompt: str = None, **kwargs) -> None:
+        prompt = action['prompt'] if action.get('prompt') else action.get('hidden_prompt')
+        if prompt is None:
             raise Exception("No prompt to process")
         handler = self._ai_handlers_by_chat_key.get(action['chat_key'])
         if not handler:
             raise Exception("Unmanaged chat: {}".format(action['chat_key']))
         request_identifiers = dict(request_type='prompt', question_idx=action['question_idx'],
                                    action_id=action_id, user_sid=user_sid, chat_id=action['chat_id'])
-        handler.send_prompt(action['model_key'], action['prompt'], request_identifiers, private_key=private_key,
-                            action=action, **kwargs)
+        handler.send_prompt(action['model_key'], prompt, request_identifiers, private_key=private_key,
+                            action=action, custom_init_prompt=custom_init_prompt, **kwargs)

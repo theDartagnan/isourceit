@@ -54,10 +54,11 @@ export function administrativeAuthentication({ username, password }) {
 /*
 204
 */
-export function generateAuthenticationToken({ username, examId }) {
+export function generateAuthenticationToken({ username, examType, examId }) {
   return ROOT_AX.post(`${ROOT_URL}/composition/access`, {
     username,
     exam_id: examId,
+    exam_type: examType,
   })
     .then((res) => res.data);
 }

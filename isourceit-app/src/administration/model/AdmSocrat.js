@@ -1,9 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { dateTimeStringToDate } from '../../services/timeService';
 import ExamStudentInfo from './ExamStudentInfo';
-import { getExamDetails } from './netLayer';
+import { getSocratDetails } from './netLayer';
 
-class AdmExam {
+class AdmSocrat {
   _id;
 
   _courseId;
@@ -16,13 +16,11 @@ class AdmExam {
 
   _questions;
 
-  _durationMinutes;
-
   _authors;
 
   _students;
 
-  _selectedChats;
+  _selectedChat;
 
   _created;
 
@@ -57,48 +55,24 @@ class AdmExam {
     return this._generationAuthUrl;
   }
 
-  // set name(v) {
-  //   this._name = v;
-  // }
-
   get description() {
     return this._description;
   }
-
-  // set description(v) {
-  //   this._description = v;
-  // }
 
   get questions() {
     return this._questions;
   }
 
-  get durationMinutes() {
-    return this._durationMinutes;
-  }
-
-  // set durationMinutes(v) {
-  //   this._durationMinutes = Number.parseInt(v, 10);
-  // }
-
   get authors() {
     return this._authors;
   }
-
-  // setAuthorsFromLineSeparated(text) {
-  //   this._authors = text.split('\n').map((a) => a.trim()).filter((a) => !!a);
-  // }
 
   get students() {
     return this._students;
   }
 
-  // setStudentsFromLineSeparated(text) {
-  //   this._students = text.split('\n').map((a) => a.trim()).filter((a) => !!a);
-  // }
-
-  get selectedChats() {
-    return this._selectedChats;
+  get selectedChat() {
+    return this._selectedChat;
   }
 
   get creationDate() {
@@ -136,9 +110,9 @@ class AdmExam {
     this._questions = data.questions ?? this._questions;
     this._durationMinutes = data.duration_minutes ?? this._durationMinutes;
     this._authors = data.authors ?? this._authors;
-    this._students = data.students?.map((student) => new ExamStudentInfo(this._id, 'exam', student))
+    this._students = data.students?.map((student) => new ExamStudentInfo(this._id, 'socrat', student))
       ?.sort((a, b) => a.username.localeCompare(b.username)) ?? this._students;
-    this._selectedChats = data.selected_chats ?? this._selectedChats;
+    this._selectedChat = data.selected_chat ?? this._selectedChat;
     this._created = dateTimeStringToDate(data.created) ?? this._created;
     this._summaryNbQuestions = data.nb_questions ?? this._summaryNbQuestions;
     this._summaryNbStudents = data.nb_students ?? this._summaryNbStudents;
@@ -146,7 +120,7 @@ class AdmExam {
   }
 
   async loadDetails() {
-    const examDetail = await getExamDetails({ examId: this._id });
+    const examDetail = await getSocratDetails({ socratId: this._id });
     this.fromJson(examDetail, true);
     runInAction(() => {
       this._detailsLoaded = true;
@@ -154,30 +128,11 @@ class AdmExam {
     return this;
   }
 
-  // async save() {
-  //   if (this._id) {
-  //     const examData = await updateExam({ exam: this });
-  //     this.fromJson(examData);
-  //   } else {
-  //     const examData = await createExam({ exam: this });
-  //     this.fromJson(examData);
-  //   }
-  //   return this;
-  // }
-
-  static createEmptyExamWithId(examId) {
-    const exam = new AdmExam();
-    exam._id = examId;
+  static createEmptySocratWithId(socratId) {
+    const exam = new AdmSocrat();
+    exam._id = socratId;
     return exam;
   }
-
-  // static createExamForEdition() {
-  //   const exam = new AdmExam();
-  //   exam._authors = [];
-  //   exam._students = [];
-  //   exam._selectedChats = [];
-  //   return exam;
-  // }
 }
 
-export default AdmExam;
+export default AdmSocrat;

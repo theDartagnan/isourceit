@@ -16,7 +16,7 @@ function ExamsManagement() {
     <>
       <Row className="justify-content-center align-items-center">
         <Col xs="auto">
-          <h1>Exams Management</h1>
+          <h1>Exams & Questionnaires Management</h1>
         </Col>
         {
           currentUser.isAdmin && (

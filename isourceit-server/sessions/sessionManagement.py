@@ -1,13 +1,15 @@
 import logging
 from datetime import datetime
 from typing import Optional
+
 from flask import session
 
 __all__ = ['STUDENT_ROLE', 'TEACHER_ROLE', 'ADMIN_ROLE',
            'clear_session', 'has_logged_session', 'build_user_context_from_session',
-           'session_is_student', 'session_is_teacher_or_admin', 'session_username',
+           'session_is_student', 'session_is_teacher_or_admin', 'session_exam_type', 'session_username',
            'update_session_student_info', 'session_exam_id', 'is_exam_started', 'is_exam_ended',
-           'init_composition_session', 'init_admin_session', 'get_ws_sid', 'update_session_ws_sid']
+           'init_exam_composition_session', 'init_socrat_composition_session', 'init_admin_session',
+           'get_ws_sid', 'update_session_ws_sid']
 
 LOG = logging.getLogger(__name__)
 
@@ -30,8 +32,8 @@ def init_admin_session(username: str, role: str):
     session['session_type'] = SESSION_TYPE_ADMIN
 
 
-def init_composition_session(username: str, role: str, exam_id: str, exam_started: bool,
-                             exam_ended: bool, timeout: datetime = None):
+def init_exam_composition_session(username: str, role: str, exam_id: str, exam_started: bool,
+                                  exam_ended: bool, timeout: datetime = None):
     if 'username' in session:
         raise Exception('Cannot init an already init session')
     if not username or role != STUDENT_ROLE:
@@ -40,10 +42,27 @@ def init_composition_session(username: str, role: str, exam_id: str, exam_starte
     session['username'] = username
     session['role'] = role
     session['session_type'] = SESSION_TYPE_COMPOSITION
+    session['exam_type'] = 'exam'
     session['exam_id'] = exam_id
     session['exam_started'] = exam_started
     session['exam_ended'] = exam_ended
     session['timeout'] = timeout
+
+
+def init_socrat_composition_session(username: str, role: str, socrat_id: str, socrat_started: bool,
+                                    socrat_ended: bool):
+    if 'username' in session:
+        raise Exception('Cannot init an already init session')
+    if not username or role != STUDENT_ROLE:
+        raise Exception('Cannot init a session without a proper username or role')
+
+    session['username'] = username
+    session['role'] = role
+    session['session_type'] = SESSION_TYPE_COMPOSITION
+    session['exam_type'] = 'socrat'
+    session['exam_id'] = socrat_id
+    session['exam_started'] = socrat_started
+    session['exam_ended'] = socrat_ended
 
 
 def clear_session():
@@ -68,6 +87,10 @@ def session_username() -> Optional[str]:
 
 def session_type() -> str:
     return session.get('session_type')
+
+
+def session_exam_type() -> str:
+    return session.get('exam_type')
 
 
 def session_exam_id() -> str:
@@ -125,7 +148,7 @@ def build_user_context_from_session():
         },
         'role': session['role']
     }
-    for attr in ['exam_id', 'exam_started', 'exam_ended', 'timeout']:
+    for attr in ['exam_type', 'exam_id', 'exam_started', 'exam_ended', 'timeout']:
         if attr in session:
             context[attr] = session[attr]
 

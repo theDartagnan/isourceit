@@ -2,6 +2,7 @@ import { observer } from 'mobx-react';
 import React, {
   useContext, useEffect, useReducer,
 } from 'react';
+import PropTypes from 'prop-types';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Col, Row } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -38,7 +39,7 @@ function reduce(state, action) {
   }
 }
 
-function ExamAnalytics() {
+function ExamAnalytics({ examType }) {
   const { examId } = useParams();
   const [searchParams] = useSearchParams();
   const { manager } = useContext(ExamMgmtStore);
@@ -46,14 +47,25 @@ function ExamAnalytics() {
 
   useEffect(() => {
     // Ensure detail are loade the positionate
-    manager.loadDetailedExam({ examId }).then(() => {
+    let dePromise;
+    switch (examType) {
+      case 'exam':
+        dePromise = manager.loadDetailedExam({ examId });
+        break;
+      case 'socrat':
+        dePromise = manager.loadDetailedSocrat({ examId });
+        break;
+      default:
+        throw new Error(`Unmanageable exam type: ${examType}`);
+    }
+    dePromise.then(() => {
       // if a username search params was initially given, set the state
       const uname = searchParams.get('username');
       if (uname) {
         dispatch({ type: 'set-student', value: uname });
       }
     });
-  }, [examId, manager]);
+  }, [examType, examId, manager]);
 
   // Reload / filter actions to analyzed if asked (state.loadingActions becomes true)
   useEffect(() => {
@@ -109,6 +121,7 @@ function ExamAnalytics() {
                   </Col>
                 </Row>
                 <ExamAnalyticsFilter
+                  examType={examType}
                   students={exam.students}
                   questions={exam.questions}
                   selectedStudentUsername={state.studentUsername}
@@ -147,5 +160,9 @@ function ExamAnalytics() {
     </Row>
   );
 }
+
+ExamAnalytics.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
+};
 
 export default observer(ExamAnalytics);

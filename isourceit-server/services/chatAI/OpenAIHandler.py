@@ -4,8 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from json import JSONDecodeError
 from multiprocessing.queues import Queue
 from typing import Optional, Dict, List
+
 import requests
 import sseclient
+
 from mongoDAO.MongoDAO import MongoDAO
 from mongoDAO.studentActionRepository import find_last_chat_ai_model_interactions
 from mongoModel.StudentAction import AskChatAI
@@ -25,13 +27,17 @@ OPENAI_SYSTEM_INIT_PROMPT = "You are a helpful assistant."
 OPENAI_TEMPERATURE = 0.6
 
 
-def generate_request_messages_from_previsou_chat_interactions(chat_interactions: List):
+def generate_request_messages_from_previous_chat_interactions(chat_interactions: List):
     for interaction in chat_interactions:
         if interaction['achieved']:
-            yield {'role': 'user', 'content': interaction['prompt']}
+            yield {'role': 'user',
+                   'content': interaction['hidden_prompt'] if interaction.get('hidden_prompt') else interaction[
+                       'prompt']}
             yield {'role': 'assistant', 'content': interaction.get('answer', '')}
         else:
-            yield {'role': 'user', 'content': interaction['prompt']}
+            yield {'role': 'user',
+                   'content': interaction['hidden_prompt'] if interaction.get('hidden_prompt') else interaction[
+                       'prompt']}
 
 
 class OpenAIHAndler(ChatAIHandler):
@@ -97,7 +103,8 @@ class OpenAIHAndler(ChatAIHandler):
             result['chat_key'] = self.chat_key
             self._response_queue.put(result)
 
-    def _handle_prompt(self, action: AskChatAI, private_key: str, request_identifiers: Dict = None):
+    def _handle_prompt(self, action: AskChatAI, private_key: str, request_identifiers: Dict = None,
+                       extra: dict = None):
         # retrieve previous exchanges (requires examId, username, questionIdx, chat_key)
         mongo_dao = MongoDAO()
         old_chat_interactions = find_last_chat_ai_model_interactions(mongo_dao, username=action['student_username'],
@@ -105,12 +112,14 @@ class OpenAIHAndler(ChatAIHandler):
                                                                      question_idx=action['question_idx'],
                                                                      chat_id=action['chat_id'])
         # forge request using stream mode and user tracking
-        rq_messages = [{"role": "system", "content": OPENAI_SYSTEM_INIT_PROMPT}] + \
-                      list(generate_request_messages_from_previsou_chat_interactions(old_chat_interactions))
+        init_prompt = extra['custom_init_prompt'] if 'custom_init_prompt' in extra else OPENAI_SYSTEM_INIT_PROMPT
+        temperature = extra['custom_temperature'] if 'custom_temperature' in extra is not None else OPENAI_TEMPERATURE
+        rq_messages = [{"role": "system", "content": init_prompt}] + list(
+            generate_request_messages_from_previous_chat_interactions(old_chat_interactions))
         rq_body = {
             'model': action['model_key'],
             'messages': rq_messages,
-            'temperature': OPENAI_TEMPERATURE,
+            'temperature': temperature,
             'stream': True,
             'user': action['student_username']
         }
@@ -189,5 +198,8 @@ class OpenAIHAndler(ChatAIHandler):
         if not action:
             LOG.warning('Cannot request OpenAI without any action.')
             return
+        extra_keys = ('custom_init_prompt', 'custom_temperature')
+        extra = dict((k, kwargs[k]) for k in extra_keys if k in kwargs)
+
         # Request thread pools of openai worker to
-        self._worker_pool.submit(self._handle_prompt, action, private_key, request_identifiers)
+        self._worker_pool.submit(self._handle_prompt, action, private_key, request_identifiers, extra)

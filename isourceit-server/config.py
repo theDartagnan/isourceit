@@ -42,7 +42,7 @@ TICKET_COM_ANSWER_ON_GENERATE = False
 TICKET_STUDENT_KEY = "3fc5c5170ebf71780ba3847bdcec28dd0e1b989ab415ea9d2fa9cc451b6cf4eb"  # default my_secret_key
 TICKET_STUDENT_SALT = "chat-ai-exam-srv"  # default chat-ai-exam-srv
 # Parametric URL to provide to student to initiate connection. Modify according your deployment setting.
-APP_COMPOSITION_AUTH_GENERATION_URL = 'http://localhost:8888/isourceit/composition/auth/generation/:exam_id'
+APP_COMPOSITION_AUTH_GENERATION_URL = 'http://localhost:8888/isourceit/composition/auth/generation/:exam_type/:exam_id'
 # Parametric URL to validate a student authentication ticket, that will be sent by mail to students.
 # Modify according your deployment setting.
 APP_COMPOSITION_AUTH_VALIDATION_URL = 'http://localhost:8888/isourceit/composition/auth/validation?ticket=:ticket'
@@ -73,6 +73,14 @@ MAIL_ASCII_ATTACHMENTS = False  # default False
 # Temporary folder to generate archives of pdf
 PDF_TEMP_DIR = './temppdf'  # default /tmp
 
+# SOCRAT CONFIGURATION
+DEFAULT_SOCRAT_INIT_PROMPT = """You should act as professor who follows the socratic approach for teaching.
+I will give you a question and a final answer. 
+You should propose a set of questions that you can ask to students in an interactive way one by one to guide them to the final answer.
+Please don't answer the questions on behalf of students, only adapt the questions based on the student answers.
+Give the questions in an interactive way one by one, and wait for the answer of the student before you move to the next question.
+Change the questions based on the answer of the students."""
+DEFAULT_SOCRAT_CHAT_TEMPERATURE = 0.2
 
 # CHAT AI INTEGRATION
 

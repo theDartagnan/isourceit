@@ -1,10 +1,11 @@
 import { observer, PropTypes as MPropTypes } from 'mobx-react';
+import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import {
   Button, Form, InputGroup, OverlayTrigger, Tooltip,
 } from 'react-bootstrap';
 
-function ExamInfoView({ exam }) {
+function ExamInfoView({ examType, exam }) {
   const [showSharedLinkTooltip, setShowSharedLinkTooltip] = useState(false);
 
   const shareLinkToClipboard = () => {
@@ -47,11 +48,15 @@ function ExamInfoView({ exam }) {
       {/* eslint-disable-next-line react/no-danger */}
       <div className="border border-1 p-1 mt-1" dangerouslySetInnerHTML={{ __html: exam.description }} />
       <ul className="list-unstyled">
-        <li className="mt-3">
-          <u>Duration (minutes):</u>
-          {' '}
-          {exam.durationMinutes}
-        </li>
+        {
+          examType === 'exam' && (
+            <li className="mt-3">
+              <u>Duration (minutes):</u>
+              {' '}
+              {exam.durationMinutes}
+            </li>
+          )
+        }
         <li className="mt-3">
           <u>Authors:</u>
           <ul className="list-unstyled mx-3">
@@ -68,6 +73,7 @@ function ExamInfoView({ exam }) {
 }
 
 ExamInfoView.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
   exam: MPropTypes.objectOrObservableObject.isRequired,
 };
 

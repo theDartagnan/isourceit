@@ -5,13 +5,26 @@ import { Alert, Modal, ProgressBar } from 'react-bootstrap';
 import { LoadingLoader } from '../../../common/components/Loading';
 import ReportArchive from '../../model/ReportAchive';
 
-function ReportArchiveModal({ examId, show, onClose }) {
+function ReportArchiveModal({
+  examType, examId, show, onClose,
+}) {
   const [reportHdlr, setReportHdlr] = useState({ report: null, loading: true, error: null });
 
   useEffect(() => {
     if (show && examId) {
       setReportHdlr({ report: null, loading: true, error: null });
-      ReportArchive.request_report_archive(examId).then((report) => {
+      let reportPromise;
+      switch (examType) {
+        case 'exam':
+          reportPromise = ReportArchive.request_exam_report_archive(examId);
+          break;
+        case 'socrat':
+          reportPromise = ReportArchive.request_socrat_report_archive(examId);
+          break;
+        default:
+          throw new Error(`Unmanageable examType: ${examType}`);
+      }
+      reportPromise.then((report) => {
         setReportHdlr({
           report,
           loading: false,
@@ -34,7 +47,7 @@ function ReportArchiveModal({ examId, show, onClose }) {
       };
     }
     return undefined;
-  }, [show, examId]);
+  }, [examType, show, examId]);
 
   let modalBody;
   if (reportHdlr.loading) {
@@ -82,6 +95,7 @@ function ReportArchiveModal({ examId, show, onClose }) {
 }
 
 ReportArchiveModal.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
   examId: PropTypes.string,
   show: PropTypes.bool,
   onClose: PropTypes.func.isRequired,

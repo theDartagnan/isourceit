@@ -5,6 +5,11 @@ export function getExamDetails({ examId }) {
     .then((res) => res.data);
 }
 
+export function getSocratDetails({ socratId }) {
+  return ROOT_AX.get(`${ROOT_URL}/composition/socrats/${socratId}`)
+    .then((res) => res.data);
+}
+
 export function startExam() {
   return ROOT_AX.post(`${ROOT_URL}/composition/actions`, {
     action_type: 'StartExam',

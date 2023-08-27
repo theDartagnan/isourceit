@@ -1,4 +1,5 @@
 from flask import request, Blueprint
+
 from services import studentActionService
 from sessions.securedEndpoint import secured_endpoint
 from sessions.sessionManagement import STUDENT_ROLE, TEACHER_ROLE, ADMIN_ROLE
@@ -26,3 +27,10 @@ def delete_resource(action_id: str):
 @secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
 def get_admin_exam_student_actions(exam_id: str, student_username: str):
     return studentActionService.get_exam_student_actions(exam_id, student_username)
+
+
+@student_action_controller.route("/api/rest/admin/socrats/<exam_id>/students/<student_username>/actions",
+                                 methods=['GET'])
+@secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
+def get_admin_socrat_student_actions(exam_id: str, student_username: str):
+    return studentActionService.get_socrat_student_actions(exam_id, student_username)

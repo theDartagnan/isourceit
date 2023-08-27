@@ -5,6 +5,8 @@ import zipfile
 from datetime import datetime
 from threading import Thread
 from time import sleep
+from typing import Union
+
 from bson import ObjectId
 from flask import current_app
 from xhtml2pdf import pisa
@@ -14,6 +16,7 @@ from mongoDAO.reportArchiveRepository import update_report_archive_progression, 
     delete_full_report_archive
 from mongoDAO.studentActionRepository import get_actions_for_student_for_exam
 from mongoModel.Exam import Exam
+from mongoModel.SocratQuestionnaire import SocratQuestionnaire
 from services.reportArchive.examReportGeneration import generate_report
 
 LOG = logging.getLogger(__name__)
@@ -22,11 +25,12 @@ REPORT_WAITING_DELAY_SEC = 5 * 60
 
 
 class ExamReportCreationThread(Thread):
-    __slots__ = ['__exam', '__mongo_dao', '__report_id', '__base_path']
+    __slots__ = ['__exam_type', '__exam', '__mongo_dao', '__report_id', '__base_path']
 
-    def __init__(self, mongo_dao: MongoDAO, exam: Exam, report_id: ObjectId ):
+    def __init__(self, mongo_dao: MongoDAO, exam_type: str, exam: Union[Exam, SocratQuestionnaire], report_id: ObjectId ):
         super().__init__()
         self.__mongo_dao = mongo_dao
+        self.__exam_type = exam_type
         self.__exam = exam
         self.__report_id = report_id
         self.__base_path = current_app.config.get('PDF_TEMP_DIR', '/tmp')
@@ -46,7 +50,7 @@ class ExamReportCreationThread(Thread):
                         actions = get_actions_for_student_for_exam(self.__mongo_dao, student_username,
                                                                    str(self.__exam['_id']))
                         # Create the html report, transform it into pdb and write it into the archive
-                        html = ''.join(generate_report(self.__exam, student_username, actions))
+                        html = ''.join(generate_report(self.__exam_type, self.__exam, student_username, actions))
                         with io.BytesIO() as pdf_file:
                             # Write pdf into bytes buffer
                             pisa_status = pisa.CreatePDF(src=html, dest=pdf_file, dest_bytes=True, debug=1)

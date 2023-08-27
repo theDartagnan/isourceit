@@ -37,7 +37,7 @@ function reduce(state, action) {
 }
 
 function StudentTokenGeneration() {
-  const { examId } = useParams();
+  const { examType, examId } = useParams();
   const { currentUser } = useContext(RootStore);
   const [state, dispatch] = useReducer(reduce, initState());
 
@@ -46,7 +46,7 @@ function StudentTokenGeneration() {
     const username = state.username.trim();
     if (username) {
       dispatch({ type: 'set-generating' });
-      currentUser.generateAuthToken({ examId, username })
+      currentUser.generateAuthToken({ examId, examType, username })
         .then(
           (token) => dispatch({ type: 'set-token', value: token }),
           (error) => dispatch({ type: 'set-error', error }),
@@ -58,19 +58,30 @@ function StudentTokenGeneration() {
     <Row className="justify-content-center">
       <Col xs={12} sm={10} md={6} lg={4}>
         <Alert variant="primary" className="mb-3">
-          <Alert.Heading>Examinee token generation</Alert.Heading>
+          <Alert.Heading>Student token generation</Alert.Heading>
           <p>
-            This login page is reserved to students that attempt to log for a particular exam.
+            This login page is reserved to students that attempt to log for a
+            particular exam or questionnaire.
             Please enter your email address to receive a connection link.
           </p>
         </Alert>
         <Form onSubmit={attemptGenerateToken}>
           <fieldset disabled={state.disabled}>
-            <Form.Group className="mb-3" controlId="LoginExamId">
-              <Form.Label>ExamId</Form.Label>
+            <Form.Group className="mb-3" controlId="LoginExamType">
+              <Form.Label>Resource type</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter examId"
+                placeholder="Enter resource type"
+                required
+                disabled
+                value={examType}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="LoginExamId">
+              <Form.Label>Resource id</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter resource id"
                 required
                 disabled
                 value={examId}
@@ -107,7 +118,7 @@ function StudentTokenGeneration() {
                 <Alert variant="warning" className="mt-3">
                   <Alert.Heading>
                     Token (WARNING: in a secured environment,&nbsp;
-                    this show not be showed)
+                    this must not be shown)
                   </Alert.Heading>
                   <p className="text-wrap text-break">
                     <a href={state.tokenGenerated.url}>{state.tokenGenerated.url}</a>

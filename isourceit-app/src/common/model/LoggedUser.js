@@ -32,6 +32,7 @@ class LoggedUser {
     this._loggedUser = userContext.user;
     this._role = userContext.role;
     this._userContext = {
+      examType: userContext.exam_type,
       examId: userContext.exam_id,
       examStarted: userContext.exam_started,
       examEnded: userContext.exam_ended,
@@ -117,11 +118,11 @@ class LoggedUser {
     this._setUserContextInfo(userContext);
   }
 
-  async generateAuthToken({ examId, username }) {
+  async generateAuthToken({ examType, examId, username }) {
     if (this.loggedIn) {
       console.warn('Cannot log in; already logged in.');
     }
-    return generateAuthenticationToken({ username, examId });
+    return generateAuthenticationToken({ username, examType, examId });
   }
 
   async ticketAuth({ ticket }) {

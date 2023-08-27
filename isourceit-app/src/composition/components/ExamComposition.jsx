@@ -18,7 +18,7 @@ function ExamComposition({ exam }) {
     <>
       <Row>
         <Col xs={12} sm={3} md={3} lg="auto">
-          <QuestionMenu exam={exam} />
+          <QuestionMenu examType="exam" exam={exam} />
         </Col>
         <Col xs={12} sm={9} md={9} lg={10}>
           <ExamQuestion question={exam.currentQuestion} chatChoices={exam.chatChoices} />

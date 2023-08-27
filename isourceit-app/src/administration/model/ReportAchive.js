@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import { getExamReport, getReportInfo } from './netLayer';
+import { getExamReport, getReportInfo, getSocratReport } from './netLayer';
 
 const UPDATE_TIMEOUT_DELAY_MS = 1000;
 
@@ -156,8 +156,13 @@ class ReportArchive {
     }
   }
 
-  static async request_report_archive(examId) {
+  static async request_exam_report_archive(examId) {
     const reportData = await getExamReport({ examId });
+    return new ReportArchive(reportData);
+  }
+
+  static async request_socrat_report_archive(socratId) {
+    const reportData = await getSocratReport({ socratId });
     return new ReportArchive(reportData);
   }
 }

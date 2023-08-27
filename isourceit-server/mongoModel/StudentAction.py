@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import TypedDict, NotRequired, Optional
+
 import pydantic
 from bson import ObjectId
 
 __all__ = ['StudentAction', 'StartExam', 'START_EXAM_TYPE',
            'WroteInitialAnswer', 'WROTE_INITIAL_ANSWER_TYPE',
            'AskChatAI', 'ASK_CHAT_AI_TYPE',
-           'ExternalResource',  'EXTERNAL_RESOURCE_TYPE',
+           'ExternalResource', 'EXTERNAL_RESOURCE_TYPE',
            'WroteFinalAnswer', 'WROTE_FINAL_ANSWER_TYPE',
            'SubmitExam', 'SUBMIT_EXAM_TYPE',
            'ChangedQuestion', 'CHANGED_QUESTION_TYPE',
@@ -52,7 +53,8 @@ class WroteInitialAnswer(StudentAction):
 
 
 class AskChatAI(StudentAction):
-    prompt: pydantic.StrictStr
+    prompt: NotRequired[pydantic.StrictStr]
+    hidden_prompt: NotRequired[pydantic.StrictStr]
     answer: NotRequired[pydantic.StrictStr]
     achieved: NotRequired[pydantic.StrictBool]
     chat_id: pydantic.StrictStr

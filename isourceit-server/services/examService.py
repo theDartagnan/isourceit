@@ -1,8 +1,10 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Mapping, cast, Optional, Union, Any, Dict
+
 import pydantic
 from werkzeug.exceptions import BadRequest, Unauthorized, NotFound
+
 from mongoDAO import examRepository, studentActionRepository
 from mongoDAO.MongoDAO import MongoDAO
 from mongoModel.Exam import Exam
@@ -10,7 +12,7 @@ from mongoModel.StudentAction import START_EXAM_TYPE, WROTE_INITIAL_ANSWER_TYPE,
     EXTERNAL_RESOURCE_TYPE, WROTE_FINAL_ANSWER_TYPE, SUBMIT_EXAM_TYPE, CHANGED_QUESTION_TYPE
 from services.ChatAIManager import ChatAIManager
 from services.securityService import decrypt_exam_chat_api_keys, encrypt_exam_chat_api_keys
-from services.studentAuthUrlService import generate_exam_auth_generation_url
+from services.studentAuthUrlService import generate_auth_generation_url
 from sessions.sessionManagement import session_username, session_exam_id
 
 __all__ = ['find_admin_exams_summary', 'find_admin_exam_by_id', 'create_exam', 'update_exam',
@@ -33,8 +35,10 @@ def find_admin_exam_by_id(exam_id: str, with_action_summary: bool = False) -> Ex
     # Replace the _id key by id key
     exam['id'] = str(exam['_id'])
     exam.pop('_id', None)
+    # Remove the exam type field
+    exam.pop('exam_type')
     # Inject sharing url for student auth
-    exam['student_generation_auth_url'] = generate_exam_auth_generation_url(exam['id'])
+    exam['student_generation_auth_url'] = generate_auth_generation_url('exam', exam['id'])
     # Replace all student token by a marker of tokenAsked
     for student in exam.get('students', []):
         if 'access_token' in student:
@@ -64,7 +68,8 @@ def find_admin_exam_by_id(exam_id: str, with_action_summary: bool = False) -> Ex
                 student['nb_actions'] = act_sum['nb_actions']
                 student['submitted'] = act_sum['submitted']
                 student['first_timestamp'] = act_sum['first_timestamp']
-                student['ended_exam'] = True if (student['first_timestamp'] < limit_dt or act_sum['submitted']) else False
+                student['ended_exam'] = True if (
+                        student['first_timestamp'] < limit_dt or act_sum['submitted']) else False
             else:
                 student['nb_actions'] = 0
                 student['submitted'] = False
@@ -77,6 +82,8 @@ def find_admin_exam_by_id(exam_id: str, with_action_summary: bool = False) -> Ex
 def create_exam(exam_data: Dict) -> Exam:
     # add creation date
     exam_data['created'] = datetime.utcnow()
+    # add exam type
+    exam_data['exam_type'] = 'exam'
     # set owner with current user
     username = session_username()
     exam_data['owner_username'] = username
@@ -101,18 +108,20 @@ def create_exam(exam_data: Dict) -> Exam:
     mongo_dao = MongoDAO()
     exam_id = examRepository.create_exam(mongo_dao, exam_to_create)
 
-    # inject id to the model to return and remove the _id
+    # inject id to the model to return and remove the _id and exam type
     exam_to_create['id'] = str(exam_id)
     exam_to_create.pop('_id', None)
+    exam_to_create.pop('exam_type', None)
     LOG.info('Exam %s created with id %s.', exam_to_create['name'], exam_to_create['id'])
     return exam_to_create
 
 
-def update_exam(exam_id: str, exam_data: Mapping) -> Exam:
+def update_exam(exam_id: str, exam_data: dict) -> Exam:
     # Inject owner and creation date to avoid cast crash (but will not be used after)
     username = session_username()
     exam_data['owner_username'] = username
     exam_data['created'] = datetime.utcnow()
+    exam_data['exam_type'] = 'exam'
     exam_to_update = cast(Exam, pydantic.create_model_from_typeddict(Exam)(**exam_data).dict())
 
     if exam_to_update['id'] != exam_id:
@@ -162,9 +171,10 @@ def update_exam(exam_id: str, exam_data: Mapping) -> Exam:
     # update the exam
     examRepository.update_exam(mongo_dao, exam_id, exam)
 
-    # return the exam with its id
+    # return the exam with its id and without the exam type
     exam['id'] = str(exam_id)
     exam.pop('_id', None)
+    exam.pop('exam_type', None)
     return exam
 
 
@@ -237,7 +247,7 @@ def find_composition_exam_by_id(exam_id: str) -> Optional[Union[Exam, Mapping]]:
         return composition_exam
 
     # fulfill the model with actions
-    actions_to_process = students_exam_actions[1:] if first_trace_processed else first_trace_processed
+    actions_to_process = students_exam_actions[1:] if first_trace_processed else students_exam_actions
     for action in actions_to_process:
         if action['action_type'] == START_EXAM_TYPE:
             # compute timeout : start timestamp + duration
@@ -276,7 +286,7 @@ def find_composition_exam_by_id(exam_id: str) -> Optional[Union[Exam, Mapping]]:
                 continue
             question['resources'].append(dict(id=str(action['_id']), title=action['title'],
                                               description=action['description'],
-                                              rsc_type=action['rsc_type'], timestamp= action['timestamp']))
+                                              rsc_type=action['rsc_type'], timestamp=action['timestamp']))
 
         elif action['action_type'] == WROTE_FINAL_ANSWER_TYPE:
             question = composition_exam['questions'].get(action['question_idx'])
@@ -301,5 +311,3 @@ def find_composition_exam_by_id(exam_id: str) -> Optional[Union[Exam, Mapping]]:
         composition_exam['current_question_idx'] = 0
 
     return composition_exam
-
-

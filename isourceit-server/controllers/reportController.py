@@ -1,4 +1,5 @@
 from flask import redirect, url_for, Blueprint
+
 from services import examReportService
 from sessions.securedEndpoint import secured_endpoint
 from sessions.sessionManagement import TEACHER_ROLE, ADMIN_ROLE
@@ -11,7 +12,14 @@ report_controller = Blueprint('report', __name__)
 @report_controller.route("/api/rest/admin/exams/<exam_id>/reports", methods=['GET'])
 @secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
 def get_exam_report(exam_id: str):
-    report_id = examReportService.start_or_get_reporting(exam_id)
+    report_id = examReportService.start_or_get_exam_reporting(exam_id)
+    return redirect(url_for("report.get_report_info", _external=True, report_id=report_id), 302)
+
+
+@report_controller.route("/api/rest/admin/socrats/<socrat_id>/reports", methods=['GET'])
+@secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
+def get_socrat_report(socrat_id: str):
+    report_id = examReportService.start_or_get_socrat_reporting(socrat_id)
     return redirect(url_for("report.get_report_info", _external=True, report_id=report_id), 302)
 
 

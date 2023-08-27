@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Iterable, Tuple, TypedDict, NotRequired, Dict, List
+from typing import Iterable, Tuple, TypedDict, NotRequired, Dict, List, Union
 from mongoModel.Exam import Exam
+from mongoModel.SocratQuestionnaire import SocratQuestionnaire
 from mongoModel.StudentAction import StudentAction
 
 __all__ = ['generate_report']
@@ -136,12 +137,16 @@ def generate_report_style() -> str:
 """
 
 
-def generate_report_title(exam_name: str, student_username: str) -> str:
+def generate_exam_report_title(exam_name: str, student_username: str) -> str:
     yield """<h1>Exam &ldquo;{}&rdquo; Report for {}</h1>""".format(exam_name, student_username)
 
 
-def generate_report_summary(exam_name: str, student_username: str, exam_start_date: datetime, ended: bool,
-                            submitted: bool) -> str:
+def generate_socrat_report_title(exam_name: str, student_username: str) -> str:
+    yield """<h1>Socrate questionnaire &ldquo;{}&rdquo; Report for {}</h1>""".format(exam_name, student_username)
+
+
+def generate_exam_report_summary(exam_name: str, student_username: str, exam_start_date: datetime, ended: bool,
+                                 submitted: bool) -> str:
     formated_start_date = exam_start_date.strftime('%Y-%m-%d %H:%M %z') if exam_start_date else 'Exam not started yet'
     yield """
 <ul class="no-style">
@@ -154,7 +159,21 @@ def generate_report_summary(exam_name: str, student_username: str, exam_start_da
 """.format(exam_name, student_username, formated_start_date, format_bool(ended), format_bool(submitted))
 
 
-def generate_answers(question_answers: Iterable[Tuple[str, str, str]]):
+def generate_socrat_report_summary(exam_name: str, student_username: str, exam_start_date: datetime, ended: bool,
+                                 submitted: bool) -> str:
+    formated_start_date = exam_start_date.strftime('%Y-%m-%d %H:%M %z') if exam_start_date else 'Exam not started yet'
+    yield """
+<ul class="no-style">
+<li>Socrate questionnaire: <b>{}</b></li>
+<li>Student: <b>{}</b></li>
+<li>Examination date: <b>{} GMT</b></li>
+<li>Questionnaire ended: <b class="red-color">{}</b></li>
+<li>Questionnaire submitted by student: <b class="red-color">{}</b></li>
+</ul>
+""".format(exam_name, student_username, formated_start_date, format_bool(ended), format_bool(submitted))
+
+
+def generate_exam_answers(question_answers: Iterable[Tuple[str, str, str]]):
     """
     :param question_answers: list of tuples (question, initial answer, final answer)
     :return: string
@@ -171,6 +190,29 @@ def generate_answers(question_answers: Iterable[Tuple[str, str, str]]):
 <pre>
 {}
 </pre>""".format(idx + 1, question, final_ans, initial_ans)
+
+
+def generate_socrat_answers(question_answers: Iterable[Tuple[str, str, str, str]]):
+    """
+    :param question_answers: list of tuples (question, teacher answer, initial answer, final answer)
+    :return: string
+    """
+    yield '<h2>Answers</h2>'
+    for idx, (question, teacher_ans, initial_ans, final_ans) in enumerate(question_answers):
+        yield """
+<h3>Question {:d}: &ldquo;{:.30}&rdquo;</h3>
+<h4>Teacher Answer</h4>
+<pre>
+{}
+</pre>
+<h4>Final Answer</h4>
+<pre>
+{}
+</pre>
+<h4>Initial Answer</h4>
+<pre>
+{}
+</pre>""".format(idx + 1, question, teacher_ans, final_ans, initial_ans)
 
 
 def generate_action_summary(action_summary: ActionSummary) -> str:
@@ -216,22 +258,52 @@ def generate_actions_details(actions: Iterable[StudentAction]):
 </table>"""
 
 
-def generate_report(exam: Exam, student_username: str, actions: List[StudentAction]) -> str:
+def generate_exam_report(exam: Exam, student_username: str, actions: List[StudentAction]) -> str:
     # create action summary
     action_summary = create_action_summary(actions)
-    # Compute ended indicator : either submitted, or started_ts + exam duration < now
+    # exam: either submitted, or started_ts + exam duration < now
     if action_summary['started_ts']:
-        timeout_reached = (action_summary['started_ts'] + timedelta(minutes=exam['duration_minutes'])) > datetime.utcnow()
+        timeout_reached = (action_summary['started_ts'] + timedelta(
+            minutes=exam['duration_minutes'])) > datetime.utcnow()
     else:
         timeout_reached = False
     ended_exam = action_summary['has_submitted'] or timeout_reached
     # yield different report parts, separated by line feeds
     yield from generate_report_style()
-    yield from generate_report_title(exam['name'], student_username)
-    yield from generate_report_summary(exam['name'], student_username, action_summary['started_ts'], ended_exam,
-                                       action_summary['has_submitted'])
-    yield from generate_answers((q, action_summary['initial_answers_by_qidx'].get(idx, ''),
-                                 action_summary['final_answers_by_qidx'].get(idx, ''))
-                                for (idx, q) in enumerate(exam['questions']))
+    yield from generate_exam_report_title(exam['name'], student_username)
+    yield from generate_exam_report_summary(exam['name'], student_username, action_summary['started_ts'], ended_exam,
+                                            action_summary['has_submitted'])
+    yield from generate_exam_answers((q, action_summary['initial_answers_by_qidx'].get(idx, ''),
+                                      action_summary['final_answers_by_qidx'].get(idx, ''))
+                                     for (idx, q) in enumerate(exam['questions']))
     yield from generate_action_summary(action_summary)
     yield from generate_actions_details(actions)
+
+
+def generate_socrat_report(exam: SocratQuestionnaire, student_username: str, actions: List[StudentAction]) -> str:
+    # create action summary
+    action_summary = create_action_summary(actions)
+    # socrat: submitted only
+    ended_exam = action_summary['has_submitted']
+    # yield different report parts, separated by line feeds
+    yield from generate_report_style()
+    yield from generate_socrat_report_title(exam['name'], student_username)
+    yield from generate_socrat_report_summary(exam['name'], student_username, action_summary['started_ts'], ended_exam,
+                                              action_summary['has_submitted'])
+    yield from generate_socrat_answers((q['question'], q['answer'],
+                                        action_summary['initial_answers_by_qidx'].get(idx, ''),
+                                        action_summary['final_answers_by_qidx'].get(idx, ''))
+                                       for (idx, q) in enumerate(exam['questions']))
+    yield from generate_action_summary(action_summary)
+    yield from generate_actions_details(actions)
+
+
+def generate_report(exam_type: str, exam: Union[Exam, SocratQuestionnaire], student_username: str, actions: List[StudentAction]) -> str:
+    if exam_type == 'exam':
+        yield from generate_exam_report(exam, student_username, actions)
+    elif exam_type == 'socrat':
+        yield from generate_socrat_report(exam, student_username, actions)
+    else:
+        raise Exception('Bad exam type: ' + str(exam_type))
+
+

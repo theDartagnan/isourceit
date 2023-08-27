@@ -26,6 +26,7 @@ from controllers.studentActionController import student_action_controller
 from controllers.appController import app_controller
 from controllers.examController import exam_controller
 from controllers.reportController import report_controller
+from controllers.socratQuestionnaireController import socrat_controller
 
 LOG = logging.getLogger(__name__)
 
@@ -81,8 +82,8 @@ def create_server_apps(config_file_path: str, static_folder_path: str,
     app.session_interface = AutoCleanMongoSession(mongo_dao.session_col, threshold_cleaner=timedelta(hours=2))
 
     # validate token communication configuration and issue error is misconfig
-    if app.config.get('TICKET_COM_SEND_MAIL', False) is False\
-            and app.config.get('TICKET_COM_TEACHER', True) is False\
+    if app.config.get('TICKET_COM_SEND_MAIL', False) is False \
+            and app.config.get('TICKET_COM_TEACHER', True) is False \
             and app.config.get('TICKET_COM_ANSWER_ON_GENERATE', False) is False:
         for _ in range(5):
             LOG.error("Configuration error detected: no student exam access ticket communication configured!")
@@ -113,6 +114,7 @@ def create_server_apps(config_file_path: str, static_folder_path: str,
     app.register_blueprint(app_controller)
     app.register_blueprint(exam_controller)
     app.register_blueprint(report_controller)
+    app.register_blueprint(socrat_controller)
 
     # Websocket controllers setup
     @socketio.on('connect')
@@ -160,4 +162,3 @@ if __name__ == '__main__':
     app, socketio_app, chat_ai_mgr = create_server_apps(args.config, args.static_folder, args.log_level)
     # Start server
     start_server(app, socketio_app, chat_ai_mgr)
-

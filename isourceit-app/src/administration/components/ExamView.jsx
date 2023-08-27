@@ -1,5 +1,6 @@
 import { observer } from 'mobx-react';
 import React, { useContext, useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import {
   Button, ButtonGroup, Col, Row,
 } from 'react-bootstrap';
@@ -13,15 +14,24 @@ import ExamQuestionsView from './examInfo/ExamQuestionsView';
 import ExamStudentsView from './examInfo/ExamStudentsView';
 import ReportArchiveModal from './examInfo/ReportArchiveModal';
 
-function ExamView() {
+function ExamView({ examType }) {
   const navigate = useNavigate();
   const { examId } = useParams();
   const { manager } = useContext(ExamMgmtStore);
   const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
-    manager.loadDetailedExam({ examId });
-  }, [manager, examId]);
+    switch (examType) {
+      case 'exam':
+        manager.loadDetailedExam({ examId });
+        break;
+      case 'socrat':
+        manager.loadDetailedSocrat({ examId });
+        break;
+      default:
+        throw new Error(`Unmanageable exam type: ${examType}`);
+    }
+  }, [examType, manager, examId]);
 
   const generatePdf = () => setShowReportModal(true);
 
@@ -49,11 +59,11 @@ function ExamView() {
                       </Button>
                       {exam.name}
                     </h4>
-                    <ExamInfoView exam={exam} />
+                    <ExamInfoView examType={examType} exam={exam} />
                   </Col>
                   <Col xs={12} md={5} xl={4}>
                     <h4 className="text-primary">Questions</h4>
-                    <ExamQuestionsView exam={exam} />
+                    <ExamQuestionsView exam={exam} examType={examType} />
                   </Col>
                   <Col xs={12} md={2} xl={2}>
                     <h4 className="text-primary">Actions</h4>
@@ -71,6 +81,7 @@ function ExamView() {
                   </Col>
                 </Row>
                 <ReportArchiveModal
+                  examType={examType}
                   examId={exam.id}
                   show={showReportModal}
                   onClose={() => setShowReportModal(false)}
@@ -84,5 +95,9 @@ function ExamView() {
     </Row>
   );
 }
+
+ExamView.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
+};
 
 export default observer(ExamView);

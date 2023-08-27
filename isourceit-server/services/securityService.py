@@ -8,14 +8,16 @@ from cryptography.fernet import Fernet
 from flask import current_app
 from itsdangerous import URLSafeSerializer, BadData
 from werkzeug.exceptions import Unauthorized, BadRequest
-from mongoDAO import userRepository, examRepository, studentActionRepository
+
+from mongoDAO import userRepository, examRepository, studentActionRepository, socratRepository
 from mongoDAO.MongoDAO import MongoDAO
 from mongoModel.Exam import Exam
+from mongoModel.SocratQuestionnaire import SocratQuestionnaire
 from mongoModel.StudentAction import START_EXAM_TYPE, SUBMIT_EXAM_TYPE
-from services.studentAuthUrlService import generate_exam_auth_validation_url
 from services.mailService import MailService
+from services.studentAuthUrlService import generate_auth_validation_url
 from sessions.sessionManagement import clear_session, STUDENT_ROLE, build_user_context_from_session, \
-    init_composition_session, init_admin_session
+    init_exam_composition_session, init_admin_session, init_socrat_composition_session
 
 LOG = logging.getLogger(__name__)
 
@@ -36,6 +38,20 @@ def encrypt_exam_chat_api_keys(exam: Exam) -> Exam:
     return exam
 
 
+def encrypt_socrat_chat_api_keys(socrat: SocratQuestionnaire) -> SocratQuestionnaire:
+    key = current_app.config.get('API_PV_KEY_ENC_KEY')
+    if key is None:
+        LOG.warning("No key provided to encrypt chat api keys. Use default. Unsecured.")
+        key = DFLT_FERNET_KEY
+    if 'selected_chat' not in socrat:
+        return socrat
+    if 'api_key' in socrat['selected_chat']:
+        f_cypher = Fernet(key.encode('UTF-8'))
+        socrat['selected_chat']['api_key'] = f_cypher.encrypt(socrat['selected_chat']['api_key']
+                                                              .encode('UTF-8')).decode('UTF-8')
+    return socrat
+
+
 def decrypt_exam_chat_api_keys(exam: Exam) -> Exam:
     key = current_app.config.get('API_PV_KEY_ENC_KEY')
     if key is None:
@@ -50,7 +66,21 @@ def decrypt_exam_chat_api_keys(exam: Exam) -> Exam:
     return exam
 
 
-def decrypt_exam_chat_api_key(enc: str) -> str:
+def decrypt_socrat_chat_api_keys(socrat: SocratQuestionnaire) -> SocratQuestionnaire:
+    key = current_app.config.get('API_PV_KEY_ENC_KEY')
+    if key is None:
+        LOG.warning("No key provided to encrypt chat api keys. Use default. Unsecured.")
+        key = DFLT_FERNET_KEY
+    if 'selected_chat' not in socrat:
+        return socrat
+    if 'api_key' in socrat['selected_chat']:
+        f_cypher = Fernet(key.encode('UTF-8'))
+        socrat['selected_chat']['api_key'] = f_cypher.decrypt(socrat['selected_chat']['api_key']
+                                                              .encode('UTF-8')).decode('UTF-8')
+    return socrat
+
+
+def decrypt_chat_api_key(enc: str) -> str:
     if not enc:
         return enc
     key = current_app.config.get('API_PV_KEY_ENC_KEY')
@@ -86,11 +116,24 @@ def create_exam_composition_url_ticket(exam_id: str, username: str, token: str) 
     return s1.dumps({
         'exam_id': exam_id,
         'username': username,
-        'token': token
+        'token': token,
+        'type': 'exam',
     })
 
 
-def load_exam_composition_info_from_ticket(ticket: str) -> Dict[str, str]:
+def create_socrat_composition_url_ticket(socrat_id: str, username: str, token: str) -> str:
+    secret_key = get_ticket_security_key()
+    salt = get_ticket_salt_key()
+    s1 = URLSafeSerializer(secret_key, salt=salt)
+    return s1.dumps({
+        'socrat_id': socrat_id,
+        'username': username,
+        'token': token,
+        'type': 'socrat',
+    })
+
+
+def load_composition_info_from_ticket(ticket: str) -> Dict[str, str]:
     secret_key = get_ticket_security_key()
     salt = get_ticket_salt_key()
     s1 = URLSafeSerializer(secret_key, salt=salt)
@@ -111,9 +154,7 @@ def authenticate_user(username: str, password: str) -> None:
     init_admin_session(username, user['role'])
 
 
-def initiate_student_composition_access(exam_id: str, username: str) -> str:
-    if not exam_id or not username:
-        raise BadRequest("Missing information for authentication")
+def __initiate_student_exam_composition_access(exam_id: str, username: str) -> dict:
     # Retrieve exam students information
     mongo_dao = MongoDAO()
     student_access = examRepository.find_student_access_for_exam(mongo_dao, exam_id, username)
@@ -127,31 +168,62 @@ def initiate_student_composition_access(exam_id: str, username: str) -> str:
     # Create an access ticket
     ticket = create_exam_composition_url_ticket(exam_id, username, token)
     # Create the access complete url
-    access_url = generate_exam_auth_validation_url(ticket)
+    access_url = generate_auth_validation_url(ticket)
     # According to the configuration, send mail or return url, or indicate teacher will provide the ticket manually
     response = dict(mail=False, teacher=False, url=None)
     if current_app.config.get('TICKET_COM_SEND_MAIL', False) is True:
         mail_svc = MailService()
-        mail_svc.send_mail_for_student_composition(student_access['username'], student_access['exam_name'], access_url)
+        mail_svc.send_mail_for_exam_student_composition(student_access['username'], student_access['exam_name'],
+                                                        access_url)
         response['mail'] = True
     if current_app.config.get('TICKET_COM_TEACHER', True) is True:
         response['teacher'] = True
     if current_app.config.get('TICKET_COM_ANSWER_ON_GENERATE', False) is True:
         response['url'] = access_url
-
     return response
 
 
-def authenticate_student_from_ticket(ticket: str) -> None:
-    # Process authentication and identification
-    try:
-        student_info = load_exam_composition_info_from_ticket(ticket)
-    except BadData:
-        raise Unauthorized("bad ticket")
+def __initiate_student_socrat_composition_access(socrat_id: str, username: str) -> dict:
+    # Retrieve exam students information
+    mongo_dao = MongoDAO()
+    student_access = socratRepository.find_student_access_for_socrat(mongo_dao, socrat_id, username)
+    if student_access is None:
+        raise Unauthorized("User not authorized to access this exam")
+    # If token not known, generate a new token and update course access
+    token = student_access.get('access_token')
+    if token is None:
+        token = str(uuid4())
+        socratRepository.set_student_token(mongo_dao, socrat_id, username, token)
+    # Create an access ticket
+    ticket = create_socrat_composition_url_ticket(socrat_id, username, token)
+    # Create the access complete url
+    access_url = generate_auth_validation_url(ticket)
+    # According to the configuration, send mail or return url, or indicate teacher will provide the ticket manually
+    response = dict(mail=False, teacher=False, url=None)
+    if current_app.config.get('TICKET_COM_SEND_MAIL', False) is True:
+        mail_svc = MailService()
+        mail_svc.send_mail_for_socrat_student_composition(student_access['username'], student_access['exam_name'],
+                                                          access_url)
+        response['mail'] = True
+    if current_app.config.get('TICKET_COM_TEACHER', True) is True:
+        response['teacher'] = True
+    if current_app.config.get('TICKET_COM_ANSWER_ON_GENERATE', False) is True:
+        response['url'] = access_url
+    return response
 
-    exam_id = student_info.get('exam_id')
-    username = student_info.get('username')
-    token = student_info.get('token')
+
+def initiate_student_composition_access(exam_id: str, username: str, exam_type: str) -> dict:
+    if not exam_id or not username or not exam_type:
+        raise BadRequest("Missing information for authentication")
+    if exam_type == 'exam':
+        return __initiate_student_exam_composition_access(exam_id, username)
+    elif exam_type == 'socrat':
+        return __initiate_student_socrat_composition_access(exam_id, username)
+    else:
+        raise BadRequest("Wrong authentication information")
+
+
+def __authenticate_student_for_exam_from_ticket(exam_id: str, username: str, token: str):
     if exam_id is None or username is None or token is None:
         raise Unauthorized("Missing credential")
     mongo_dao = MongoDAO()
@@ -178,8 +250,54 @@ def authenticate_student_from_ticket(ticket: str) -> None:
             LOG.warning('Unmanaged action type for auth: %s.', action['action_type'])
 
     # set session info
-    init_composition_session(username, role=STUDENT_ROLE, exam_id=exam_id, exam_started=exam_started,
-                             exam_ended=exam_ended, timeout=timeout)
+    init_exam_composition_session(username, role=STUDENT_ROLE, exam_id=exam_id, exam_started=exam_started,
+                                  exam_ended=exam_ended, timeout=timeout)
+
+
+def __authenticate_student_for_socrat_from_ticket(socrat_id: str, username: str, token: str):
+    if socrat_id is None or username is None or token is None:
+        raise Unauthorized("Missing credential")
+    mongo_dao = MongoDAO()
+    student_access = socratRepository.find_student_access_for_socrat(mongo_dao, socrat_id, username)
+    if student_access is None:
+        raise Unauthorized("User not authorized to access this exam")
+    good_token = student_access.get('access_token')
+    if good_token is None or good_token != token:
+        raise Unauthorized("Wrong token")
+
+    # find student's actions for this exam related to its start or end
+    socrat_act = studentActionRepository.find_exam_action_for_student_for_exam(mongo_dao, username, socrat_id)
+    socrat_started = False
+    socrat_ended = False
+    for action in socrat_act:
+        if action['action_type'] == START_EXAM_TYPE:
+            socrat_started = True
+        elif action['action_type'] == SUBMIT_EXAM_TYPE:
+            socrat_ended = True
+        else:
+            LOG.warning('Unmanaged action type for auth: %s.', action['action_type'])
+
+    # set session info
+    init_socrat_composition_session(username, role=STUDENT_ROLE, socrat_id=socrat_id, socrat_started=socrat_started,
+                                    socrat_ended=socrat_ended)
+
+
+def authenticate_student_from_ticket(ticket: str) -> None:
+    # Process authentication and identification
+    try:
+        student_info = load_composition_info_from_ticket(ticket)
+    except BadData:
+        raise Unauthorized("bad ticket")
+
+    ticket_type = student_info.get('type')
+    if ticket_type == 'exam':
+        __authenticate_student_for_exam_from_ticket(student_info.get('exam_id'), student_info.get('username'),
+                                                    student_info.get('token'))
+    elif ticket_type == 'socrat':
+        __authenticate_student_for_socrat_from_ticket(student_info.get('socrat_id'), student_info.get('username'),
+                                                      student_info.get('token'))
+    else:
+        raise Unauthorized("bad ticket")
 
 
 def get_user_context() -> None:

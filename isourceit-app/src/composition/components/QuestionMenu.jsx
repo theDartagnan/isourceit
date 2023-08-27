@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { observer, PropTypes as MPropTypes } from 'mobx-react';
 import { Button, Col, Row } from 'react-bootstrap';
 import classNames from 'classnames';
@@ -13,7 +14,17 @@ function getButtonVariant(question) {
   return 'outline-danger';
 }
 
-function QuestionMenu({ exam }) {
+function QuestionMenu({ examType, exam }) {
+  let submitText;
+  switch (examType) {
+    case 'socrat':
+      submitText = 'Submit questionnaire';
+      break;
+    case 'exam':
+    default:
+      submitText = 'Submit exam';
+  }
+
   return (
     <Row className="border-end border-dark border-3 h-100">
       <Col>
@@ -32,7 +43,7 @@ function QuestionMenu({ exam }) {
             ))
           }
           <Button variant="primary" className="mt-5" onClick={() => exam.goOnSubmit()}>
-            Submit Exam
+            {submitText}
           </Button>
         </div>
       </Col>
@@ -41,6 +52,7 @@ function QuestionMenu({ exam }) {
 }
 
 QuestionMenu.propTypes = {
+  examType: PropTypes.string.isRequired,
   exam: MPropTypes.objectOrObservableObject.isRequired,
 };
 

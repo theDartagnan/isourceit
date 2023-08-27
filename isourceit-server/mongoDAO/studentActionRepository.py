@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Any, Optional, List, Mapping
+
 import pymongo
 from bson import ObjectId
+
 from mongoDAO.MongoDAO import MongoDAO
 from mongoModel.StudentAction import StudentAction, ASK_CHAT_AI_TYPE, EXTERNAL_RESOURCE_TYPE, \
     STUDENT_ACTION_TYPE_MAPPING, START_EXAM_TYPE, SUBMIT_EXAM_TYPE
@@ -176,8 +178,27 @@ def find_last_chat_ai_model_interactions(dao: MongoDAO, username: str, exam_id: 
         projection={
             '_id': 0,
             'prompt': 1,
+            'hidden_prompt': 1,
             'answer': 1,
             'achieved': 1,
         }
     )
     return list(result)
+
+
+def has_chat_ai_model_interaction(dao: MongoDAO, username: str, exam_id: str, question_idx: int,
+                                  chat_id: str) -> bool:
+    result = dao.student_action_col.find_one(
+        filter={
+            'exam_id': exam_id,
+            'student_username': username,
+            'question_idx': question_idx,
+            'action_type': ASK_CHAT_AI_TYPE,
+            'chat_id': chat_id
+
+        },
+        projection={
+            '_id': 1
+        }
+    )
+    return result is not None

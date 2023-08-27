@@ -2,17 +2,18 @@ import flask
 from bson import ObjectId
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import NotFound
+
+from mongoDAO import socratRepository, examRepository
 from mongoDAO.MongoDAO import MongoDAO
-from mongoDAO.examRepository import find_exam_by_id
 from mongoDAO.reportArchiveRepository import find_report_archive_or_insert, find_report_file, \
     find_report_archive_by_id, find_old_report, delete_full_report_archive
 from services.reportArchive.ExamReportCreationThread import ExamReportCreationThread
 
 
-def start_or_get_reporting(exam_id: str):
+def start_or_get_exam_reporting(exam_id: str):
     # find exam with minimal properties
     mongo_dao = MongoDAO()
-    exam = find_exam_by_id(mongo_dao, exam_id, projection={
+    exam = examRepository.find_exam_by_id(mongo_dao, exam_id, projection={
         '_id': 1,
         'name': 1,
         'duration_minutes': 1,
@@ -25,7 +26,28 @@ def start_or_get_reporting(exam_id: str):
     report, inserted = find_report_archive_or_insert(mongo_dao, exam_id)
     # if inserted create and launch a processing thread
     if inserted:
-        th = ExamReportCreationThread(mongo_dao, exam, report['_id'])
+        th = ExamReportCreationThread(mongo_dao, 'exam', exam, report['_id'])
+        th.start()
+    # in any case return the report id
+    return str(report['_id'])
+
+
+def start_or_get_socrat_reporting(socrat_id: str):
+    # find exam with minimal properties
+    mongo_dao = MongoDAO()
+    socrat = socratRepository.find_socrat_by_id(mongo_dao, socrat_id, projection={
+        '_id': 1,
+        'name': 1,
+        'questions': 1,
+        'students': 1
+    })
+    if socrat is None:
+        raise NotFound('Exam not found')
+    # find or create a report
+    report, inserted = find_report_archive_or_insert(mongo_dao, socrat_id)
+    # if inserted create and launch a processing thread
+    if inserted:
+        th = ExamReportCreationThread(mongo_dao, 'socrat', socrat, report['_id'])
         th.start()
     # in any case return the report id
     return str(report['_id'])

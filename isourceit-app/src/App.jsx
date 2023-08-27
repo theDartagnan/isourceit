@@ -12,6 +12,8 @@ import ExamAnalytics from './administration/components/examAnalytics/ExamAnalyti
 import ExamEditor from './administration/components/examEdition/ExamEditor';
 import ExamRoot from './composition/components/ExamRoot';
 import FatalError from './common/components/FatalError';
+import SocratEditor from './administration/components/examEdition/SocratEditor';
+import SocratRoot from './composition/components/SocratRoot';
 
 const router = createBrowserRouter([
   {
@@ -28,7 +30,11 @@ const router = createBrowserRouter([
           if (currentUser.loggedIn) {
             if (currentUser.isStudent) {
               if (currentUser.context?.examId) {
-                throw redirect('/composition/exam');
+                if (currentUser.context.examType === 'exam') {
+                  throw redirect('/composition/exam');
+                } else if (currentUser.context.examType === 'socrat') {
+                  throw redirect('/composition/socrat');
+                }
               }
               throw new Error('Bad application state');
             } else if (currentUser.isTeacherOrAdmin) {
@@ -65,7 +71,7 @@ const router = createBrowserRouter([
         },
         children: [
           {
-            path: 'generation/:examId',
+            path: 'generation/:examType/:examId',
             element: <StudentTokenGeneration />,
           },
           {
@@ -107,20 +113,36 @@ const router = createBrowserRouter([
                 element: <ExamsViewTable />,
               },
               {
-                path: 'new',
+                path: 'new-exam',
                 element: <ExamEditor newExam />,
               },
               {
-                path: ':examId',
-                element: <ExamView />,
+                path: 'exams/:examId',
+                element: <ExamView examType="exam" />,
               },
               {
-                path: ':examId/edit',
+                path: 'exams/:examId/edit',
                 element: <ExamEditor />,
               },
               {
-                path: ':examId/analytics',
-                element: <ExamAnalytics />,
+                path: 'exams/:examId/analytics',
+                element: <ExamAnalytics examType="exam" />,
+              },
+              {
+                path: 'new-socrat',
+                element: <SocratEditor newSocrat />,
+              },
+              {
+                path: 'socrats/:examId',
+                element: <ExamView examType="socrat" />,
+              },
+              {
+                path: 'socrats/:examId/edit',
+                element: <SocratEditor />,
+              },
+              {
+                path: 'socrats/:examId/analytics',
+                element: <ExamAnalytics examType="socrat" />,
               },
             ],
           },
@@ -131,12 +153,26 @@ const router = createBrowserRouter([
         loader: async () => {
           const { currentUser } = STORE;
           await currentUser.getInitPromise();
-          if (!currentUser.loggedIn || !currentUser.isStudent || !currentUser.context?.examId) {
+          if (!currentUser.loggedIn || !currentUser.isStudent
+            || currentUser.context?.examType !== 'exam' || !currentUser.context?.examId) {
             throw redirect('/');
           }
           return true;
         },
         element: <ExamRoot />,
+      },
+      {
+        path: 'composition/socrat',
+        loader: async () => {
+          const { currentUser } = STORE;
+          await currentUser.getInitPromise();
+          if (!currentUser.loggedIn || !currentUser.isStudent
+            || currentUser.context?.examType !== 'socrat' || !currentUser.context?.examId) {
+            throw redirect('/');
+          }
+          return true;
+        },
+        element: <SocratRoot />,
       },
       {
         path: 'not-ready',

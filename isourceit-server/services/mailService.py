@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_mail import Mail, Message
+
 from utils.Singleton import Singleton
 
 
@@ -21,7 +22,7 @@ class MailService(metaclass=Singleton):
     def is_inited(self):
         return self.__inited
 
-    def send_mail_for_student_composition(self, student_mail: str, exam_name: str, access_url: str) -> None:
+    def send_mail_for_exam_student_composition(self, student_mail: str, exam_name: str, access_url: str) -> None:
         if not self.__inited:
             raise Exception("Mail service not inited")
         msg = Message(subject="Exam access",
@@ -37,6 +38,29 @@ The Chat AI exam platform robot.""".format(student_mail, exam_name, access_url)
 <p>Dear {},
 <br/><br/>
 You can now start the exam "{}" through this link: <a href={}>{}</a>.
+<br/><br/>
+Sincerely,
+<br/>
+The I Source It platform robot.
+</p>""".format(student_mail, exam_name, access_url, access_url)
+        self.__mail.send(msg)
+
+    def send_mail_for_socrat_student_composition(self, student_mail: str, exam_name: str, access_url: str) -> None:
+        if not self.__inited:
+            raise Exception("Mail service not inited")
+        msg = Message(subject="Socrat questionnary access",
+                      recipients=[student_mail])
+        msg.body = """
+Dear {},
+
+You can now start the Socrat questionnary "{}" through this link: {}.
+
+Sincerely,
+The Chat AI exam platform robot.""".format(student_mail, exam_name, access_url)
+        msg.html = """
+<p>Dear {},
+<br/><br/>
+You can now start the Socrat questionnary "{}" through this link: <a href={}>{}</a>.
 <br/><br/>
 Sincerely,
 <br/>

@@ -1,17 +1,19 @@
 import logging
 from typing import Dict
+
 import pymongo
 from gridfs import GridFS
 from pymongo import MongoClient, database
 from pymongo.collection import Collection
 from pymongo.database import Database
+
 from mongoModel.ChatAIDescription import ChatAIDescription
-from mongoModel.ReportArchive import ReportArchive
 from mongoModel.Exam import Exam
+from mongoModel.ReportArchive import ReportArchive
+from mongoModel.SocratQuestionnaire import SocratQuestionnaire
 from mongoModel.StudentAction import StudentAction
 from mongoModel.User import User
 from utils.Singleton import Singleton
-
 
 __all__ = ['MongoDAO']
 
@@ -54,6 +56,12 @@ class MongoDAO(metaclass=Singleton):
 
     @property
     def exam_col(self) -> Collection[Exam]:
+        if self.__db is None:
+            raise Exception('No available database')
+        return self.__db[EXAM_COL]
+
+    @property
+    def socrat_col(self) -> Collection[SocratQuestionnaire]:
         if self.__db is None:
             raise Exception('No available database')
         return self.__db[EXAM_COL]
