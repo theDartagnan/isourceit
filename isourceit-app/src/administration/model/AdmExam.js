@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { dateTimeStringToDate } from '../../services/timeService';
 import ExamStudentInfo from './ExamStudentInfo';
-import { getExamDetails } from './netLayer';
+import { generateExamStudentsAuthUrls, getExamDetails } from './netLayer';
 
 class AdmExam {
   _id;
@@ -33,6 +33,8 @@ class AdmExam {
   _editable;
 
   _detailsLoaded = false;
+
+  _studentAuthentications = null;
 
   constructor(jsonData) {
     makeAutoObservable(this);
@@ -127,6 +129,10 @@ class AdmExam {
     return this._detailsLoaded;
   }
 
+  get studentAuthentications() {
+    return this._studentAuthentications;
+  }
+
   fromJson(data) {
     this._id = data.id ?? this._id;
     this._courseId = data.course_id ?? this._courseId;
@@ -143,6 +149,7 @@ class AdmExam {
     this._summaryNbQuestions = data.nb_questions ?? this._summaryNbQuestions;
     this._summaryNbStudents = data.nb_students ?? this._summaryNbStudents;
     this._editable = this._students ? this._students.every((s) => !s.askedAccess) : false;
+    this._studentAuthentications = null;
   }
 
   async loadDetails() {
@@ -152,6 +159,15 @@ class AdmExam {
       this._detailsLoaded = true;
     });
     return this;
+  }
+
+  async generateStudentAuthentications() {
+    let studentAuthentications = await generateExamStudentsAuthUrls({ examId: this._id });
+    studentAuthentications = studentAuthentications.sort((sa1, sa2) => sa1.username < sa2.username);
+    runInAction(() => {
+      this._studentAuthentications = studentAuthentications;
+    });
+    return studentAuthentications;
   }
 
   // async save() {

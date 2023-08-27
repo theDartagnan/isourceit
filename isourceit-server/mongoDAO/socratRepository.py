@@ -83,6 +83,22 @@ def find_student_access_for_socrat(dao: MongoDAO, socrat_id: str, username: str)
     return next(result, None)
 
 
+def find_all_student_access_for_socrat(dao: MongoDAO, socrat_id: str) -> List[Any]:
+    if not socrat_id:
+        raise Exception('Id required to get students access for a socrat access')
+    result = dao.socrat_col.aggregate([
+        {'$match': {'_id': ObjectId(socrat_id), 'exam_type': 'socrat'}},
+        {'$project': {'students': 1}},
+        {'$unwind': '$students'},
+        {'$project': {
+            'username': '$students.username',
+            'access_token': '$students.access_token',
+            '_id': 0
+        }}
+    ])
+    return list(result)
+
+
 def set_student_token(dao: MongoDAO, socrat_id: str, username: str, token: str):
     if not socrat_id or not username or not token:
         raise Exception('Id, username and token required to set student token for a socrat access')

@@ -1,6 +1,6 @@
 from flask import request, Blueprint
 
-from services import socratQuestionnaireService
+from services import socratQuestionnaireService, securityService
 from sessions.securedEndpoint import secured_endpoint
 from sessions.sessionManagement import TEACHER_ROLE, ADMIN_ROLE, STUDENT_ROLE
 
@@ -35,6 +35,12 @@ def create_socrat():
 def update_socrat(socrat_id: str):
     data = request.get_json(force=False)
     return socratQuestionnaireService.update_socrat(socrat_id, data)
+
+
+@socrat_controller.route("/api/rest/admin/socrats/<socrat_id>/student-authentications", methods=['PUT'])
+@secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
+def generate_students_auth_urls(socrat_id: str):
+    return securityService.initiate_all_student_composition_access(socrat_id, 'socrat')
 
 
 @socrat_controller.route("/api/rest/composition/socrats/<socrat_id>", methods=['GET'])

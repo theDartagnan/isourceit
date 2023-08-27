@@ -1,5 +1,5 @@
 from flask import request, Blueprint
-from services import examService
+from services import examService, securityService
 from sessions.securedEndpoint import secured_endpoint
 from sessions.sessionManagement import TEACHER_ROLE, ADMIN_ROLE, STUDENT_ROLE
 
@@ -34,6 +34,12 @@ def create_exam():
 def update_exam(exam_id: str):
     data = request.get_json(force=False)
     return examService.update_exam(exam_id, data)
+
+
+@exam_controller.route("/api/rest/admin/exams/<exam_id>/student-authentications", methods=['PUT'])
+@secured_endpoint(TEACHER_ROLE, ADMIN_ROLE)
+def generate_students_auth_urls(exam_id: str):
+    return securityService.initiate_all_student_composition_access(exam_id, 'exam')
 
 
 @exam_controller.route("/api/rest/composition/exams/<exam_id>", methods=['GET'])

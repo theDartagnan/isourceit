@@ -13,6 +13,7 @@ import ExamInfoView from './examInfo/ExamInfoView';
 import ExamQuestionsView from './examInfo/ExamQuestionsView';
 import ExamStudentsView from './examInfo/ExamStudentsView';
 import ReportArchiveModal from './examInfo/ReportArchiveModal';
+import ExamStudentsAccessView from './examInfo/ExamStudentsAccessView';
 
 function ExamView({ examType }) {
   const navigate = useNavigate();
@@ -78,6 +79,12 @@ function ExamView({ examType }) {
                   <Col>
                     <h4>Students</h4>
                     <ExamStudentsView exam={exam} />
+                  </Col>
+                </Row>
+                <Row className="justify-content-around">
+                  <Col>
+                    <h4>Students Access</h4>
+                    <ExamStudentsAccessView exam={exam} />
                   </Col>
                 </Row>
                 <ReportArchiveModal

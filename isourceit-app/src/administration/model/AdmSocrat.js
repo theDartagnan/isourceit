@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { dateTimeStringToDate } from '../../services/timeService';
 import ExamStudentInfo from './ExamStudentInfo';
-import { getSocratDetails } from './netLayer';
+import { generateSocratStudentsAuthUrls, getSocratDetails } from './netLayer';
 
 class AdmSocrat {
   _id;
@@ -31,6 +31,8 @@ class AdmSocrat {
   _editable;
 
   _detailsLoaded = false;
+
+  _studentAuthentications = null;
 
   constructor(jsonData) {
     makeAutoObservable(this);
@@ -101,6 +103,10 @@ class AdmSocrat {
     return this._detailsLoaded;
   }
 
+  get studentAuthentications() {
+    return this._studentAuthentications;
+  }
+
   fromJson(data) {
     this._id = data.id ?? this._id;
     this._courseId = data.course_id ?? this._courseId;
@@ -117,6 +123,7 @@ class AdmSocrat {
     this._summaryNbQuestions = data.nb_questions ?? this._summaryNbQuestions;
     this._summaryNbStudents = data.nb_students ?? this._summaryNbStudents;
     this._editable = this._students ? this._students.every((s) => !s.askedAccess) : false;
+    this._studentAuthentications = null;
   }
 
   async loadDetails() {
@@ -126,6 +133,15 @@ class AdmSocrat {
       this._detailsLoaded = true;
     });
     return this;
+  }
+
+  async generateStudentAuthentications() {
+    let studentAuthentications = await generateSocratStudentsAuthUrls({ socratId: this._id });
+    studentAuthentications = studentAuthentications.sort((sa1, sa2) => sa1.username < sa2.username);
+    runInAction(() => {
+      this._studentAuthentications = studentAuthentications;
+    });
+    return studentAuthentications;
   }
 
   static createEmptySocratWithId(socratId) {

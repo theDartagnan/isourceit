@@ -48,6 +48,16 @@ export function updateSocrat({ socrat }) {
     .then((res) => res.data);
 }
 
+export function generateExamStudentsAuthUrls({ examId }) {
+  return ROOT_AX.put(`${ROOT_URL}/admin/exams/${examId}/student-authentications`)
+    .then((res) => res.data);
+}
+
+export function generateSocratStudentsAuthUrls({ socratId }) {
+  return ROOT_AX.put(`${ROOT_URL}/admin/socrats/${socratId}/student-authentications`)
+    .then((res) => res.data);
+}
+
 export function loadStudentActions({ examId, studentUsername, examType = 'exams' }) {
   return ROOT_AX.get(`${ROOT_URL}/admin/${examType}/${examId}/students/${studentUsername}/actions`)
     .then((res) => res.data);

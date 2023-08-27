@@ -1,7 +1,7 @@
 import hashlib
 import logging
 from datetime import timedelta
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from uuid import uuid4
 
 from cryptography.fernet import Fernet
@@ -221,6 +221,47 @@ def initiate_student_composition_access(exam_id: str, username: str, exam_type: 
         return __initiate_student_socrat_composition_access(exam_id, username)
     else:
         raise BadRequest("Wrong authentication information")
+
+
+def initiate_all_student_composition_access(exam_id: str, exam_type: str) -> List[Dict[str, str]]:
+    """
+    Generate authentication url for all students of a base exam
+    :param exam_id: the base exam id
+    :param exam_type: the base exam type
+    :return: A list of couple username/access_url
+    """
+    if not exam_id or not exam_type or exam_type not in ['exam', 'socrat']:
+        raise BadRequest("Missing information for access initialization")
+    # Retrieve the list of token for each user according to the exam type.
+    mongo_dao = MongoDAO()
+    if exam_type == 'socrat':
+        student_accesses = socratRepository.find_all_student_access_for_socrat(mongo_dao, exam_id)
+    else:
+        student_accesses = examRepository.find_all_student_access_for_exam(mongo_dao, exam_id)
+    # Generate a token then an access url for each user Create and set the token it if required
+    authentication_urls = []
+    if exam_type == 'socrat':
+        ticket_generator = create_socrat_composition_url_ticket
+    else:
+        ticket_generator = create_exam_composition_url_ticket
+    for student_access in student_accesses:
+        # Create and set the token it if required
+        username = student_access['username']
+        token = student_access.get('access_token')
+        if not token:
+            token = str(uuid4())
+            student_access['access_token'] = token
+            if exam_type == 'socrat':
+                socratRepository.set_student_token(mongo_dao, exam_id, username, token)
+            else:
+                examRepository.set_student_token(mongo_dao, exam_id, username, token)
+        # Generate the ticket then the access url
+        ticket = ticket_generator(exam_id, username, token)
+        # Create the access complete url
+        access_url = generate_auth_validation_url(ticket)
+        # complete the list
+        authentication_urls.append(dict(username=username, access_url=access_url))
+    return authentication_urls
 
 
 def __authenticate_student_for_exam_from_ticket(exam_id: str, username: str, token: str):
