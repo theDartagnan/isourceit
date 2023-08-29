@@ -1,12 +1,39 @@
-import { observer, PropTypes as MPropTypes } from 'mobx-react';
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { observer, PropTypes as MPropTypes } from 'mobx-react';
+import { faCopy, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Button, OverlayTrigger, Table, Tooltip,
+  Button, ButtonGroup, Table,
 } from 'react-bootstrap';
+import { openMail } from '../../../services/mailService';
 
-function ExamStudentsAccessView({ exam }) {
+function forgeMailAccessSubject(examType) {
+  let entityType;
+  switch (examType) {
+    case 'socrat':
+      entityType = 'Questionnaire';
+      break;
+    default:
+      entityType = 'Exam';
+  }
+  return `${entityType} Access`;
+}
+
+function forgeMailAccessBody(examType, entityName, urlAccess) {
+  let entityType;
+  switch (examType) {
+    case 'socrat':
+      entityType = 'questionnaire';
+      break;
+    default:
+      entityType = 'exam';
+  }
+  return `Dear Ms, Mss\n\nYou can now start the ${entityType} "${entityName}" through this URL: ${urlAccess}.`;
+}
+
+function ExamStudentsAccessView({ examType, exam }) {
   const [accessLoading, setAccessLoading] = useState(false);
-  const [showSharedLinkTooltip, setShowSharedLinkTooltip] = useState(-1);
 
   const loadAuthentications = () => {
     if (!accessLoading) {
@@ -17,14 +44,15 @@ function ExamStudentsAccessView({ exam }) {
     }
   };
 
-  const shareLinkToClipboard = (url, idx) => {
-    navigator.clipboard.writeText(url).then(() => {
-      setShowSharedLinkTooltip(idx);
-    });
+  const shareLinkToClipboard = (url) => {
+    navigator.clipboard.writeText(url);
   };
 
-  const onToogleTooltip = () => {
-    setTimeout(() => setShowSharedLinkTooltip(-1), 1000);
+  const shareLinkToMail = (userUrl, urlAccess) => {
+    openMail(userUrl, {
+      subject: forgeMailAccessSubject(examType),
+      body: forgeMailAccessBody(examType, exam.name, urlAccess),
+    });
   };
 
   if (!exam.studentAuthentications) {
@@ -45,21 +73,24 @@ function ExamStudentsAccessView({ exam }) {
       </thead>
       <tbody>
         {
-          exam.studentAuthentications?.map((access, idx) => (
+          exam.studentAuthentications?.map((access) => (
             <tr key={access.username}>
               <td>{access.username}</td>
               <td>
-                <OverlayTrigger
-                  trigger="click"
-                  placement="right"
-                  show={showSharedLinkTooltip && showSharedLinkTooltip[idx]}
-                  onToggle={onToogleTooltip}
-                  overlay={(<Tooltip id="shared-link-tooltip">Copied!</Tooltip>)}
-                >
-                  <Button variant="outline-secondary" id="share-student-link" onClick={() => shareLinkToClipboard(access.access_url, idx)}>
-                    Share
+                <ButtonGroup aria-label="User actions">
+                  <Button variant="outline-secondary" onClick={() => shareLinkToClipboard(access.access_url)}>
+                    <FontAwesomeIcon aria-hidden="true" icon={faCopy} title="Copy into clipboard" />
+                    <span className="sr-only">
+                      Copy to clipboard
+                    </span>
                   </Button>
-                </OverlayTrigger>
+                  <Button variant="outline-secondary" onClick={() => shareLinkToMail(access.username, access.access_url)}>
+                    <FontAwesomeIcon aria-hidden="true" icon={faEnvelope} title="Copy into clipboard" />
+                    <span className="sr-only">
+                      Send to mail
+                    </span>
+                  </Button>
+                </ButtonGroup>
               </td>
               <td>{access.access_url}</td>
             </tr>
@@ -71,6 +102,7 @@ function ExamStudentsAccessView({ exam }) {
 }
 
 ExamStudentsAccessView.propTypes = {
+  examType: PropTypes.oneOf(['exam', 'socrat']).isRequired,
   exam: MPropTypes.objectOrObservableObject.isRequired,
 };
 

@@ -84,7 +84,7 @@ function ExamView({ examType }) {
                 <Row className="justify-content-around">
                   <Col>
                     <h4>Students Access</h4>
-                    <ExamStudentsAccessView exam={exam} />
+                    <ExamStudentsAccessView exam={exam} examType={examType} />
                   </Col>
                 </Row>
                 <ReportArchiveModal
