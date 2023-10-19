@@ -199,7 +199,7 @@ class OpenAIHAndler(ChatAIHandler):
             LOG.warning('Cannot request OpenAI without any action.')
             return
         extra_keys = ('custom_init_prompt', 'custom_temperature')
-        extra = dict((k, kwargs[k]) for k in extra_keys if k in kwargs)
+        extra = dict((k, kwargs[k]) for k in extra_keys if k in kwargs and kwargs[k])
 
         # Request thread pools of openai worker to
         self._worker_pool.submit(self._handle_prompt, action, private_key, request_identifiers, extra)
