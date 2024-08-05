@@ -164,3 +164,10 @@ With :
 - __-p password__ the user's password
 - __username__ the username
 
+# Contirbutors
+- Rémi Venant, LeMans University
+- Ahmad Samer Wazan, Zayed University
+- Imran Taj, Zayed University
+
+
+
